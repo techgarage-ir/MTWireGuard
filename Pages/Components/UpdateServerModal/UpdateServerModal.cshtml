@@ -1,0 +1,65 @@
+﻿@using MTWireGuard.Models.Requests
+@model UpdateServerRequest
+
+<div class="modal fade" id="EditModal" tabindex="-1" aria-labelledby="EditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" action="Servers/Update" method="POST">
+            <div class="modal-header">
+                <h5 class="modal-title" id="EditModalLabel">Edit server details</h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 row">
+                    <label for="WGSName" class="col-sm-3 col-form-label user-select-none">Name</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGSName" name="Name" placeholder="wireguard1">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGSPort" class="col-sm-3 col-form-label user-select-none">Listening Port</label>
+                    <div class="col-sm-9">
+                        <input type="number" class="form-control" id="WGSPort" name="Port" placeholder="13231" min="1" max="65535">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGSMTU" class="col-sm-3 col-form-label user-select-none">MTU</label>
+                    <div class="col-sm-9">
+                        <input type="number" class="form-control" id="WGSMTU" name="MTU" placeholder="1420" min="64" max="65535">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGSPrivKey" class="col-sm-3 col-form-label user-select-none">Private Key</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="WGSPrivKey" name="PrivateKey" aria-label="Generate" aria-describedby="SKeygenBTN" autocomplete="off">
+                            <button type="button" class="input-group-text" id="SKeygenBTN" style="cursor: pointer;" onclick="generateKeys(this)">
+                                <svg class="icon icon-sm text-dark my-1">
+                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-reload"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGSPubKey" class="col-sm-3 col-form-label user-select-none">Public Key</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="WGSPubKey" aria-label="Generate" aria-describedby="SUnlockBTN" autocomplete="off">
+                            <button type="button" class="input-group-text" id="SUnlockBTN" style="cursor: pointer;" onclick="changeIcon(this);">
+                                <svg class="icon icon-sm text-dark my-1">
+                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-lock-unlocked"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="ID" />
+            </div>
+            <div class="modal-footer">
+                <button type="reset" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>

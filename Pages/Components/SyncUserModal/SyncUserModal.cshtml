@@ -1,0 +1,50 @@
+﻿@using MTWireGuard.Models.Requests
+@model SyncUserRequest
+<div class="modal fade" id="SyncModal" tabindex="-1" aria-labelledby="SyncModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" asp-page="Clients" asp-page-handler="Sync" method="POST">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SyncModalLabel">Are you sure ?</h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    By syncing, the values ​​of unsynced properties will be changed to the value stored in the database.<br />
+                    Peer's Private Key is required to create client tunnel file or QR code.<br />
+                    <strong>All keys (such as private key and public key) are only stored in your docker machine and no any information is sent to outside your network.</strong>
+                </p>
+                <div class="mb-3 row">
+                    <label for="WGPName" class="col-sm-3 col-form-label user-select-none">Name</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPName" name="Name">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPPrivKey" class="col-sm-3 col-form-label user-select-none">Private Key</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="WGUPrivKey" name="PrivateKey" aria-label="Generate" aria-describedby="PKeygenBTN">
+                            <button type="button" class="input-group-text" id="PKeygenBTN" style="cursor: pointer;" onclick="generateKeys(this)">
+                                <svg class="icon icon-sm text-dark my-1">
+                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-reload"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPPubKey" class="col-sm-3 col-form-label user-select-none">Public Key</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGUPubKey" name="PublicKey">
+                    </div>
+                </div>
+                <input type="hidden" asp-for="ID" />
+            </div>
+            <div class="modal-footer">
+                <button type="reset" class="btn btn-danger" data-coreui-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-success">Sync</button>
+            </div>
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>

@@ -1,0 +1,3 @@
+﻿.logs-table tr td:nth-of-type(odd) {
+    background-color: var(--cui-table-striped-bg);
+}

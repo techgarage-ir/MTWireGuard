@@ -1,0 +1,111 @@
+﻿@page "{handler?}"
+@using MTWireGuard.Models.Mikrotik
+@model MTWireGuard.Pages.ClientsModel
+@{
+    ViewData["Title"] = "Clients";
+    ViewData["Breadcrumb"] = "Users";
+    var servers = (List<WGServerViewModel>)ViewData["servers"];
+}
+
+<div class="row">
+    <div class="table-responsive">
+        <table class="table border mb-0">
+            <thead class="table-light fw-semibold">
+                <tr class="align-middle">
+                    <th class="text-center">
+                        <svg class="icon">
+                            <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-people"></use>
+                        </svg>
+                    </th>
+                    <th>Name</th>
+                    <th>Interface</th>
+                    <th>Address</th>
+                    <th>Public-Key</th>
+                    <th>Traffic</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-2">
+    <div class="col-12">
+        @await Component.InvokeAsync("CreateClientForm", new {
+            Servers = servers
+        })
+    </div>
+</div>
+
+<!-- QR Modal -->
+<component type="typeof(Modals.QRModal)" render-mode="Static" />
+<!-- Delete Modal -->
+@await Component.InvokeAsync("DeleteModal", new {
+    IsServer = false
+})
+<!-- Edit Modal -->
+@await Component.InvokeAsync("UpdateClientModal", new {
+    Servers = servers
+})
+<!-- Sync Modal -->
+@await Component.InvokeAsync("SyncUserModal")
+
+@section Scripts {
+    <script src="js/wireguard.js"></script>
+    <script src="js/wgelements.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function (event) {
+            fetch("/Clients/getAll")
+                .then((response) => response.text())
+                .then((data) => {
+                    document.querySelector('table tbody').innerHTML = data;
+                });
+        });
+
+        document.querySelectorAll(".sync-btn").forEach(form => {
+            form.addEventListener('click', function (event) {
+                let Id = event.target.closest('tr').getAttribute('data-id');
+                document.querySelector('#SyncModal input[name="ID"]').value = Id;
+            });
+        });
+
+        document.querySelectorAll(".delete-btn").forEach(form => {
+            form.addEventListener('click', function (event) {
+                let Id = event.target.closest('tr').getAttribute('data-id');
+                document.querySelector('#DeleteModal input[name="Id"]').value = Id;
+            });
+        });
+
+        document.querySelectorAll(".update-btn").forEach(form => {
+            form.addEventListener('click', function (event) {
+                document.querySelector('#EditModal form').reset();
+                let row = event.target.closest('tr');
+                let Id = row.getAttribute('data-id');
+                let name = row.querySelector('td:nth-child(2)').innerText;
+                let interface = row.querySelector('td:nth-child(3)').innerText;
+                let address = row.querySelector('td:nth-child(4)').innerText;
+                let publicKey = row.querySelector('td:nth-child(5)').innerText;
+                document.querySelector('#EditModal input[name="ID"]').value = Id;
+                document.querySelector('#EditModal input[name="Name"]').placeholder = name;
+                document.querySelector('#EditModal input[name="AllowedAddress"]').placeholder = address;
+                document.querySelector('#EditModal input[name="PublicKey"]').placeholder = publicKey;
+                let ifOption = document.querySelector('#EditModal option[value="' + interface + '"]');
+                if (ifOption)
+                    ifOption.setAttribute("selected", true);
+            });
+        });
+
+        document.getElementById("QRModal").addEventListener('shown.coreui.modal', (event) => {
+            let Id = event.relatedTarget.closest('tr').getAttribute('data-id');
+            const xhttp = new XMLHttpRequest();
+            xhttp.onload = function () {
+                document.querySelector('#QRModal img.img-thumbnail').setAttribute("src", "data:image/png;base64, " + this.responseText);
+            }
+            xhttp.open("GET", "/Clients/QR?id=" + Id, true);
+            xhttp.send();
+        });
+    </script>
+}

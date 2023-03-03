@@ -1,0 +1,46 @@
+{
+  "profiles": {
+    "MTWireGuard": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "hotReloadEnabled": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "MT_IP": "192.168.0.96",
+        "MT_USER": "admin",
+        "MT_PASS": "",
+        "MT_PUBLIC_IP": "192.168.0.96"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7220;http://localhost:5220"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "environmentVariables": {
+        "MT_IP": "192.168.0.96",
+        "MT_USER": "panel",
+        "MT_PASS": "",
+        "MT_PUBLIC_IP": "192.168.0.96"
+      }
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:48442",
+      "sslPort": 44372
+    }
+  }
+}

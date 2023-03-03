@@ -1,0 +1,99 @@
+﻿@page
+@using MTWireGuard.Models.Mikrotik
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Breadcrumb"] = "Home";
+    var users = (List<WGPeerViewModel>)ViewData["users"];
+    var servers = (List<WGServerViewModel>)ViewData["servers"];
+    var uptr = ViewData["uptr"];
+    var downtr = ViewData["downtr"];
+}
+
+<div class="row">
+    <div class="col-sm-6 col-lg-4">
+        <div class="card mb-4" style="--cui-card-cap-bg: #88171a">
+            <div class="card-header position-relative d-flex justify-content-center align-items-center">
+                <svg class="icon icon-3xl text-white my-4">
+                    <use xlink:href="vendors/coreui/icons/svg/brand.svg#cib-wireguard"></use>
+                </svg>
+                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
+                    <canvas id="social-box-chart-1" height="90"></canvas>
+                </div>
+            </div>
+            <div class="card-body row text-center">
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@servers.Count</div>
+                    <div class="text-uppercase text-medium-emphasis small">Servers</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@servers.Where(x => x.Running).Count()</div>
+                    <div class="text-uppercase text-medium-emphasis small">Active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card mb-4" style="--cui-card-cap-bg: #0d6efd">
+            <div class="card-header position-relative d-flex justify-content-center align-items-center">
+                <svg class="icon icon-3xl text-white my-4">
+                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-lan"></use>
+                </svg>
+                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
+                    <canvas id="social-box-chart-1" height="90"></canvas>
+                </div>
+            </div>
+            <div class="card-body row text-center">
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@users.Count</div>
+                    <div class="text-uppercase text-medium-emphasis small">Users</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@users.Where(x => !x.CurrentAddress.EndsWith(":0")).Count()</div>
+                    <div class="text-uppercase text-medium-emphasis small">Online</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card mb-4" style="--cui-card-cap-bg: #0dcaf0">
+            <div class="card-header position-relative d-flex justify-content-center align-items-center">
+                <svg class="icon icon-3xl text-white my-4">
+                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-graph"></use>
+                </svg>
+                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
+                    <canvas id="social-box-chart-1" height="90"></canvas>
+                </div>
+            </div>
+            <div class="card-body row text-center">
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@uptr</div>
+                    <div class="text-uppercase text-medium-emphasis small">Upload</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@downtr</div>
+                    <div class="text-uppercase text-medium-emphasis small">Download</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 col-lg-6">
+        @await Component.InvokeAsync("CreateServerForm")
+    </div>
+    <div class="col-sm-12 col-lg-6">
+        @await Component.InvokeAsync("CreateClientForm", new {
+            Servers = servers
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <script src="vendors/coreui/utils/js/coreui-utils.js"></script>
+    <script src="js/wireguard.js"></script>
+    <script src="js/wgelements.js"></script>
+}

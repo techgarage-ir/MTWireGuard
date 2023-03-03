@@ -1,0 +1,97 @@
+﻿@using MTWireGuard.Models.Requests
+@model UpdateClientRequest
+@{
+    List<Models.Mikrotik.WGServerViewModel> Servers = ViewData["Servers"] as List<Models.Mikrotik.WGServerViewModel>;
+}
+
+<div class="modal fade" id="EditModal" tabindex="-1" aria-labelledby="EditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" action="Clients/Update" method="POST">
+            <div class="modal-header">
+                <h5 class="modal-title" id="EditModalLabel">Edit user details</h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 row">
+                    <label for="WGPUName" class="col-sm-3 col-form-label user-select-none">Name</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUName" name="Name">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUInterface" class="col-sm-3 col-form-label user-select-none">Interface</label>
+                    <div class="col-sm-9">
+                        <select class="form-select" id="WGPUInterface" name="Interface" aria-label="Default select example">
+                            @foreach (var server in Servers)
+                            {
+                                @if (server.IsEnabled)
+                                {
+                                    <option value="@server.Name">@server.Name</option>
+                                }
+                                else
+                                {
+                                    <option class="fst-italic" value="@server.Name">@server.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUPrivKey" class="col-sm-3 col-form-label user-select-none">Private Key</label>
+                    <div class="col-sm-9">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="WGPUPrivKey" name="PrivateKey" aria-label="Generate" aria-describedby="PKeygenBTN" autocomplete="off">
+                            <button type="button" class="input-group-text" id="PKeygenBTN" style="cursor: pointer;" onclick="generateKeys(this)">
+                                <svg class="icon icon-sm text-dark my-1">
+                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-reload"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUPubKey" class="col-sm-3 col-form-label user-select-none">Public Key</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUPubKey" name="PublicKey" autocomplete="off">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUPSKey" class="col-sm-3 col-form-label user-select-none">Preshared Key</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUPSKey" name="PresharedKey" autocomplete="off">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUAddress" class="col-sm-3 col-form-label user-select-none">Allowed Address</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUAddress" name="AllowedAddress">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUEndpoint" class="col-sm-3 col-form-label user-select-none">Endpoint</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUEndpoint" name="Endpoint">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUPort" class="col-sm-3 col-form-label user-select-none">Endpoint Port</label>
+                    <div class="col-sm-9">
+                        <input type="number" class="form-control" id="WGPUPort" name="EndpointPort">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUKeepAlive" class="col-sm-3 col-form-label user-select-none">Persistent Keepalive</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="WGPUKeepAlive" name="KeepAlive" placeholder="Seconds">
+                    </div>
+                </div>
+                <input type="hidden" name="ID" />
+            </div>
+            <div class="modal-footer">
+                <button type="reset" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>

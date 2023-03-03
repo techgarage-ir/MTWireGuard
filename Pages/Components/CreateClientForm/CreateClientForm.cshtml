@@ -1,0 +1,89 @@
+﻿@using MTWireGuard.Models.Requests
+@model CreateClientRequest
+@{
+    List<Models.Mikrotik.WGServerViewModel> Servers = ViewData["Servers"] as List<Models.Mikrotik.WGServerViewModel>;
+}
+<div class="card mb-4">
+    <div class="card-header">Quick add peer</div>
+    <div class="card-body">
+        <form asp-page="Clients" asp-page-handler="Create" method="POST">
+            <div class="mb-3 row">
+                <label for="WGPName" class="col-sm-3 col-form-label user-select-none">Name</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="WGPName" name="Name">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPInterface" class="col-sm-3 col-form-label user-select-none">Interface</label>
+                <div class="col-sm-9">
+                    <select class="form-select" name="Interface" aria-label="Default select example">
+                        @foreach (var server in Servers)
+                        {
+                            <option value="@server.Name">@server.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPPrivKey" class="col-sm-3 col-form-label user-select-none">Private Key</label>
+                <div class="col-sm-9">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="WGPPrivKey" name="PrivateKey" aria-label="Generate" aria-describedby="PKeygenBTN" autocomplete="off">
+                        <button type="button" class="input-group-text" id="PKeygenBTN" style="cursor: pointer;" onclick="generateKeys(this)">
+                            <svg class="icon icon-sm text-dark my-1">
+                                <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-reload"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPPubKey" class="col-sm-3 col-form-label user-select-none">Public Key</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="WGPPubKey" name="PublicKey" autocomplete="off">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPPSKey" class="col-sm-3 col-form-label user-select-none">Preshared Key</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="WGPPSKey" name="PresharedKey" autocomplete="off">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPAddress" class="col-sm-3 col-form-label user-select-none">Allowed Address</label>
+                <div class="col-sm-9">
+                    <input class="form-control" id="WGPAddress" asp-for="AllowedAddress">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPEndpoint" class="col-sm-3 col-form-label user-select-none">Endpoint</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="WGPEndpoint" name="Endpoint">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPPort" class="col-sm-3 col-form-label user-select-none">Endpoint Port</label>
+                <div class="col-sm-9">
+                    <input type="number" class="form-control" id="WGPPort" name="EndpointPort">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label for="WGPKeepAlive" class="col-sm-3 col-form-label user-select-none">Persistent Keepalive</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="WGPKeepAlive" name="KeepAlive" placeholder="--:--:--">
+                </div>
+            </div>
+            <div class="mb-5 row">
+                <label for="WGSEnabled" class="col-sm-3 form-check-label user-select-none">Enabled</label>
+                <div class="col-sm-9">
+                    <input type="checkbox" class="form-check-input" id="WGSEnabled" asp-for="Enabled" checked>
+                </div>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary" type="submit">Create</button>
+                <button class="btn btn-danger" type="reset">Clear</button>
+            </div>
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+</div>

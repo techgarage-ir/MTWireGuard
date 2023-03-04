@@ -69,9 +69,9 @@
                     </svg>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" asp-page="Servers" asp-page-handler="Enable" asp-route-ID="@server.Id" asp-route-IsEnabled="@enabled" data-target="_self" onclick="ddBtnClick(event);">@enableORdisable</a>
-                    <button class="dropdown-item update-btn" data-coreui-toggle="modal" data-coreui-target="#EditModal">Edit</button>
-                    <button class="dropdown-item delete-btn text-danger" data-coreui-toggle="modal" data-coreui-target="#DeleteModal" data-id="@server.Id">Delete</button>
+                    <a class="dropdown-item" asp-page="Servers" asp-page-handler="Enable" asp-route-ID="@server.Id" asp-route-IsEnabled="@enabled" data-target="_self" onclick="dropdownBtnClick(event);">@enableORdisable</a>
+                    <button class="dropdown-item update-btn" data-coreui-toggle="modal" data-coreui-target="#EditModal" onclick="updateServerBtn(event)">Edit</button>
+                    <button class="dropdown-item delete-btn text-danger" data-coreui-toggle="modal" data-coreui-target="#DeleteModal" data-id="@server.Id" onclick="deleteBtn(event)">Delete</button>
                 </div>
             </div>
         </td>

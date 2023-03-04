@@ -14,11 +14,7 @@ function generateKeys(dom) {
 function changeIcon(btn) {
     let frm = btn.closest('form');
     let pk = frm.querySelector('input[id$="PubKey"]');
-    pk.toggleAttribute('disabled');/*
-    if (btn.getAttribute('id') == 'PUnlockBTN')
-        document.getElementById('WGPPubKey').toggleAttribute('disabled');
-    else
-        document.getElementById('WGSPubKey').toggleAttribute('disabled');*/
+    pk.toggleAttribute('disabled');
     let svg = btn.children.item(0);
     let use = svg.children.item(0);
     let icon = use.getAttribute('xlink:href');

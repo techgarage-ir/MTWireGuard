@@ -9,20 +9,6 @@ using MTWireGuard.Repositories;
 using MTWireGuard.Services;
 using System.Diagnostics;
 
-#region Error Handling
-AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
-
-static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
-{
-    Exception ex = e.ExceptionObject as Exception;
-    if (e.IsTerminating)
-        Debug.WriteLine($"[+] {ex.Message}");
-    else
-        Debug.WriteLine($"[-] {ex.Message}");
-    throw ex;
-}
-#endregion
-
 var builder = WebApplication.CreateBuilder(args);
 using DBContext context = new();
 
@@ -106,6 +92,7 @@ else
     });
 
 app.UseDependencyCheck();
+//app.UseExceptionHandling();
 //app.UseAntiForgery();
 
 app.UseRouting();

@@ -79,17 +79,17 @@
                 <div class="dropdown-menu dropdown-menu-end">
                     @if (user.IsDifferent)
                     {
-                        <button class="dropdown-item sync-btn" data-coreui-toggle="modal" data-coreui-target="#SyncModal">Sync</button>
+                        <button class="dropdown-item sync-btn" data-coreui-toggle="modal" data-coreui-target="#SyncModal" onclick="syncBtn(event)">Sync</button>
                     }
                     <button class="dropdown-item" data-coreui-toggle="modal" data-coreui-target="#QRModal">QR</button>
                     <a class="dropdown-item" asp-page="Clients" asp-page-handler="DownloadTunnel" asp-route-id="@user.Id">Download</a>
-                    <button class="dropdown-item update-btn" data-coreui-toggle="modal" data-coreui-target="#EditModal">Edit</button>
+                    <button class="dropdown-item update-btn" data-coreui-toggle="modal" data-coreui-target="#EditModal" onclick="updateClientBtn(event)">Edit</button>
                     @{
                         var enabled = user.IsEnabled;
                         string enableORdisable = enabled ? "Disable" : "Enable";
                     }
-                    <a class="dropdown-item" asp-page="Clients" asp-page-handler="Enable" asp-route-ID="@user.Id" asp-route-IsEnabled="@enabled" data-target="_self" onclick="ddBtnClick(event);">@enableORdisable</a>
-                    <button class="dropdown-item delete-btn text-danger" data-coreui-toggle="modal" data-coreui-target="#DeleteModal">Delete</button>
+                    <a class="dropdown-item" asp-page="Clients" asp-page-handler="Enable" asp-route-ID="@user.Id" asp-route-IsEnabled="@enabled" data-target="_self" onclick="dropdownBtnClick(event);">@enableORdisable</a>
+                    <button class="dropdown-item delete-btn text-danger" data-coreui-toggle="modal" data-coreui-target="#DeleteModal" onclick="deleteBtn(event)">Delete</button>
                 </div>
             </div>
         </td>

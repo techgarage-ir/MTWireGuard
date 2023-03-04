@@ -57,47 +57,6 @@
     <script src="js/wireguard.js"></script>
     <script src="js/wgelements.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function (event) {
-            fetch("/Clients/getAll")
-                .then((response) => response.text())
-                .then((data) => {
-                    document.querySelector('table tbody').innerHTML = data;
-                });
-        });
-
-        document.querySelectorAll(".sync-btn").forEach(form => {
-            form.addEventListener('click', function (event) {
-                let Id = event.target.closest('tr').getAttribute('data-id');
-                document.querySelector('#SyncModal input[name="ID"]').value = Id;
-            });
-        });
-
-        document.querySelectorAll(".delete-btn").forEach(form => {
-            form.addEventListener('click', function (event) {
-                let Id = event.target.closest('tr').getAttribute('data-id');
-                document.querySelector('#DeleteModal input[name="Id"]').value = Id;
-            });
-        });
-
-        document.querySelectorAll(".update-btn").forEach(form => {
-            form.addEventListener('click', function (event) {
-                document.querySelector('#EditModal form').reset();
-                let row = event.target.closest('tr');
-                let Id = row.getAttribute('data-id');
-                let name = row.querySelector('td:nth-child(2)').innerText;
-                let interface = row.querySelector('td:nth-child(3)').innerText;
-                let address = row.querySelector('td:nth-child(4)').innerText;
-                let publicKey = row.querySelector('td:nth-child(5)').innerText;
-                document.querySelector('#EditModal input[name="ID"]').value = Id;
-                document.querySelector('#EditModal input[name="Name"]').placeholder = name;
-                document.querySelector('#EditModal input[name="AllowedAddress"]').placeholder = address;
-                document.querySelector('#EditModal input[name="PublicKey"]').placeholder = publicKey;
-                let ifOption = document.querySelector('#EditModal option[value="' + interface + '"]');
-                if (ifOption)
-                    ifOption.setAttribute("selected", true);
-            });
-        });
-
         document.getElementById("QRModal").addEventListener('shown.coreui.modal', (event) => {
             let Id = event.relatedTarget.closest('tr').getAttribute('data-id');
             const xhttp = new XMLHttpRequest();

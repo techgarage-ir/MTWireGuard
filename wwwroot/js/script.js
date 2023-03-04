@@ -34,7 +34,12 @@ Forms.forEach(form => {
 });
 
 dropdownBTNs.forEach(btn => {
-    btn.addEventListener('click', ddBtnClick);
+    btn.addEventListener('click', dropdownBtnClick);
+});
+
+
+document.addEventListener("DOMContentLoaded", function (event) {
+    refreshTables();
 });
 
 function loadServers() {
@@ -60,7 +65,7 @@ function refreshTables() {
     }
 }
 
-function ddBtnClick(event) {
+function dropdownBtnClick(event) {
     event.preventDefault();
     fetch(event.target.getAttribute('href'))
         .then(res => res.json())
@@ -83,4 +88,46 @@ function ddBtnClick(event) {
             toastAlert.show();
             refreshTables();
         });
+}
+
+function deleteBtn(event) {
+    let Id = event.target.closest('tr').getAttribute('data-id');
+    document.querySelector('#DeleteModal input[name="Id"]').value = Id;
+}
+
+function syncBtn(event) {
+    let Id = event.target.closest('tr').getAttribute('data-id');
+    document.querySelector('#SyncModal input[name="ID"]').value = Id;
+}
+
+function updateClientBtn(event) {
+    document.querySelector('#EditModal form').reset();
+    let row = event.target.closest('tr');
+    let Id = row.getAttribute('data-id');
+    let name = row.querySelector('td:nth-child(2)').innerText;
+    let interface = row.querySelector('td:nth-child(3)').innerText;
+    let address = row.querySelector('td:nth-child(4)').innerText;
+    let publicKey = row.querySelector('td:nth-child(5)').innerText;
+    document.querySelector('#EditModal input[name="ID"]').value = Id;
+    document.querySelector('#EditModal input[name="Name"]').placeholder = name;
+    document.querySelector('#EditModal input[name="AllowedAddress"]').placeholder = address;
+    document.querySelector('#EditModal input[name="PublicKey"]').placeholder = publicKey;
+    let ifOption = document.querySelector('#EditModal option[value="' + interface + '"]');
+    if (ifOption)
+        ifOption.setAttribute("selected", true);
+}
+
+function updateServerBtn(event) {
+    document.querySelector('#EditModal form').reset();
+    let row = event.target.closest('tr');
+    let Id = row.getAttribute('data-id');
+    let name = row.querySelector('td:nth-child(2)').innerText;
+    let port = row.querySelector('td:nth-child(3)').innerText;
+    let mtu = row.querySelector('td:nth-child(4)').innerText;
+    let publicKey = row.querySelector('td:nth-child(5)').innerText;
+    document.querySelector('#EditModal input[name="ID"]').value = Id;
+    document.querySelector('#EditModal input[name="Name"]').placeholder = name;
+    document.querySelector('#EditModal input[name="Port"]').placeholder = port;
+    document.querySelector('#EditModal input[name="MTU"]').placeholder = mtu;
+    document.querySelector('#EditModal input[id$="PubKey"]').placeholder = publicKey;
 }

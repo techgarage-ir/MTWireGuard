@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MTWireGuard
 {
@@ -84,5 +85,7 @@ namespace MTWireGuard
                 "" => throw new ArgumentException($"{nameof(input)} cannot be empty", nameof(input)),
                 _ => string.Concat(input[0].ToString().ToUpper(), input.AsSpan(1))
             };
+
+        public static string RemoveNonNumerics(this string input) => Regex.Replace(input, "[^0-9.]", "");
     }
 }

@@ -1,4 +1,4 @@
-﻿@page
+﻿@page "{handler?}"
 @using MTWireGuard.Models.Mikrotik
 @model SettingsModel
 @{
@@ -113,7 +113,7 @@
                 </div>
                 <div class="vr"></div>
                 <div class="col">
-                    <div class="fs-5 fw-semibold">@info.CPULoad %</div>
+                    <div class="fs-5 fw-semibold" id="cpuLoad">@info.CPULoad %</div>
                     <div class="text-uppercase text-medium-emphasis small">Usage</div>
                 </div>
             </div>

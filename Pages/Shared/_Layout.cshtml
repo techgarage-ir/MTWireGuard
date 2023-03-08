@@ -2,22 +2,6 @@
 @inject IMikrotikRepository API;
 @{
     var logs = await API.GetLogsAsync();
-    var info = await API.GetInfo();
-    var ramUsed = 100 - info.FreeRAMPercentage;
-    var hddUsed = 100 - info.FreeHDDPercentage;
-    string cpuColor, ramColor, hddColor;
-
-    if (info.CPULoad <= 25) cpuColor = "bg-info-gradient";
-    else if (info.CPULoad <= 75) cpuColor = "bg-warning-gradient";
-    else cpuColor = "bg-danger-gradient";
-
-    if (hddUsed <= 25) hddColor = "bg-info-gradient";
-    else if (hddUsed <= 75) hddColor = "bg-warning-gradient";
-    else hddColor = "bg-danger-gradient";
-
-    if (ramUsed <= 25) ramColor = "bg-info-gradient";
-    else if (ramUsed<= 75) ramColor = "bg-warning-gradient";
-    else ramColor = "bg-danger-gradient";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -98,23 +82,26 @@
                 </a>
             </li>
             <li class="nav-title mt-auto">System Utilization</li>
-            <li class="nav-item px-3 d-narrow-none">
+            <li class="nav-item px-3 d-narrow-none" id="cpuUsage">
                 <div class="text-uppercase mb-1"><small><b>CPU Usage</b></small></div>
                 <div class="progress progress-thin">
-                    <div class="progress-bar @cpuColor" role="progressbar" style="width: @info.CPULoad%" aria-valuenow="@info.CPULoad" aria-valuemin="0" aria-valuemax="100"></div>
-                </div><small class="text-medium-emphasis-inverse">@info.CPULoad% is using.</small>
+                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-medium-emphasis-inverse">0% is using.</small>
             </li>
-            <li class="nav-item px-3 d-narrow-none">
+            <li class="nav-item px-3 d-narrow-none" id="ramUsage">
                 <div class="text-uppercase mb-1"><small><b>Memory Usage</b></small></div>
                 <div class="progress progress-thin">
-                    <div class="progress-bar @ramColor" role="progressbar" style="width: @ramUsed%" aria-valuenow="@ramUsed" aria-valuemin="0" aria-valuemax="100"></div>
-                </div><small class="text-medium-emphasis-inverse">@info.UsedRAM/@info.TotalRAM</small>
+                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-medium-emphasis-inverse">0/0</small>
             </li>
-            <li class="nav-item px-3 mb-3 d-narrow-none">
+            <li class="nav-item px-3 mb-3 d-narrow-none" id="hddUsage">
                 <div class="text-uppercase mb-1"><small><b>Disk Usage</b></small></div>
                 <div class="progress progress-thin">
-                    <div class="progress-bar @hddColor" role="progressbar" style="width: @hddUsed%" aria-valuenow="@hddUsed" aria-valuemin="0" aria-valuemax="100"></div>
-                </div><small class="text-medium-emphasis-inverse">@info.UsedHDD/@info.TotalHDD</small>
+                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-medium-emphasis-inverse">0/0</small>
             </li>
         </ul>
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>

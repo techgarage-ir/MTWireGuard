@@ -39,6 +39,7 @@ dropdownBTNs.forEach(btn => {
 
 
 document.addEventListener("DOMContentLoaded", function (event) {
+    refreshSidebar();
     refreshTables();
 });
 
@@ -130,4 +131,36 @@ function updateServerBtn(event) {
     document.querySelector('#EditModal input[name="Port"]').placeholder = port;
     document.querySelector('#EditModal input[name="MTU"]').placeholder = mtu;
     document.querySelector('#EditModal input[id$="PubKey"]').placeholder = publicKey;
+}
+
+function refreshSidebar() {
+    fetch("/Settings/getInfo")
+        .then((response) => response.json())
+        .then((data) => {
+            let cpuProgress = document.querySelector('#cpuUsage div.progress-bar');
+            let ramProgress = document.querySelector('#ramUsage div.progress-bar');
+            let hddProgress = document.querySelector('#hddUsage div.progress-bar');
+            let cpuText = document.querySelector('#cpuUsage small.text-medium-emphasis-inverse');
+            let ramText = document.querySelector('#ramUsage small.text-medium-emphasis-inverse');
+            let hddText = document.querySelector('#hddUsage small.text-medium-emphasis-inverse');
+            cpuProgress.ariaValueNow = data.cpuUsedPercentage;
+            ramProgress.ariaValueNow = data.ramUsedPercentage;
+            hddProgress.ariaValueNow = data.hddUsedPercentage;
+            cpuProgress.style.width = data.cpuUsedPercentage + '%';
+            ramProgress.style.width = data.ramUsedPercentage + '%';
+            hddProgress.style.width = data.hddUsedPercentage + '%';
+            cpuProgress.setAttribute('class', 'progress-bar');
+            ramProgress.setAttribute('class', 'progress-bar');
+            hddProgress.setAttribute('class', 'progress-bar');
+            cpuProgress.classList.add(data.cpuBgColor);
+            ramProgress.classList.add(data.ramBgColor);
+            hddProgress.classList.add(data.hddBgColor);
+            cpuText.textContent = `${data.cpuUsedPercentage}% using`;
+            ramText.textContent = `${data.ramUsed}/${data.totalRAM} using`;
+            hddText.textContent = `${data.hddUsed}/${data.totalHDD} using`;
+            // Settings Page
+            if (window.location.href.endsWith("/Settings")) {
+                document.getElementById('cpuLoad').innerText = `${data.cpuUsedPercentage}%`;
+            }
+        });
 }

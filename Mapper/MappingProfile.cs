@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MTWireGuard.Models;
 using MTWireGuard.Models.Mikrotik;
+using System.Text.RegularExpressions;
 
 namespace MTWireGuard.Mapper
 {
@@ -70,12 +71,7 @@ namespace MTWireGuard.Mapper
                 .ForMember(dest => dest.UsedRAM,
                     opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TotalMemory) - Convert.ToInt64(src.FreeMemory), 2)))
                 .ForMember(dest => dest.UPTime,
-                    opt => opt.MapFrom(src => src.Uptime.
-                    //  Replace('d', ' ').
-                        Replace('h', ':').
-                        Replace('m', ':').
-                        Replace("s", "")))
-                ;
+                    opt => opt.MapFrom(src => FormatUptime(src.Uptime)));
 
             // Router Identity
             CreateMap<MTIdentity, MTIdentityViewModel>();
@@ -109,6 +105,33 @@ namespace MTWireGuard.Mapper
         private static List<string> FormatTopics(string topics)
         {
             return topics.Split(',', StringSplitOptions.TrimEntries).Select(t => t = Helper.UpperCaseTopics.Contains(t) ? t.ToUpper() : t.FirstCharToUpper()).ToList();
+        }
+
+        private static string FormatUptime(string uptime)
+        {
+            string patternWeek = "(\\d+)w",
+                patternDay = "(\\d+)d",
+                patternHour = "(\\d+)h",
+                patternMinute = "(\\d+)m",
+                patternSecond = "(\\d+)s";
+            Regex weekRx = new(patternWeek),
+                dayRx = new(patternDay),
+                hourRx = new(patternHour),
+                minuteRx = new(patternMinute),
+                secondRx = new(patternSecond);
+            string week = weekRx.Match(uptime).Value.RemoveNonNumerics(),
+                day = dayRx.Match(uptime).Value.RemoveNonNumerics(),
+                hour, minute, second;
+            var hourMatch = hourRx.Match(uptime);
+            var minuteMatch = minuteRx.Match(uptime);
+            var secondMatch = secondRx.Match(uptime);
+            hour = !string.IsNullOrWhiteSpace(hourMatch.Value.RemoveNonNumerics()) ? hourMatch.Value.RemoveNonNumerics() : "00";
+            minute = !string.IsNullOrWhiteSpace(minuteMatch.Value.RemoveNonNumerics()) ? minuteMatch.Value.RemoveNonNumerics() : "00";
+            second = !string.IsNullOrWhiteSpace(secondMatch.Value.RemoveNonNumerics()) ? secondMatch.Value.RemoveNonNumerics() : "00";
+            hour = int.Parse(hour.RemoveNonNumerics()).ToString("D2");
+            minute = int.Parse(minute.RemoveNonNumerics()).ToString("D2");
+            second = int.Parse(second.RemoveNonNumerics()).ToString("D2");
+            return $"{week}w {day}d {hour}:{minute}:{second}";
         }
     }
 }

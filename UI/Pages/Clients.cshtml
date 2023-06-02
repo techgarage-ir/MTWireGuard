@@ -1,0 +1,70 @@
+﻿@page "{handler?}"
+@using MTWireGuard.Application.Models.Mikrotik
+@model MTWireGuard.Pages.ClientsModel
+@{
+    ViewData["Title"] = "Clients";
+    ViewData["Breadcrumb"] = "Users";
+    var servers = (List<WGServerViewModel>)ViewData["servers"];
+}
+
+<div class="row">
+    <div class="table-responsive">
+        <table class="table border mb-0">
+            <thead class="table-light fw-semibold">
+                <tr class="align-middle">
+                    <th class="text-center">
+                        <svg class="icon">
+                            <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-people"></use>
+                        </svg>
+                    </th>
+                    <th>Name</th>
+                    <th>Interface</th>
+                    <th>Address</th>
+                    <th>Public-Key</th>
+                    <th>Traffic</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-2">
+    <div class="col-12">
+        @await Component.InvokeAsync("CreateClientForm", new {
+            Servers = servers
+        })
+    </div>
+</div>
+
+<!-- QR Modal -->
+<component type="typeof(Modals.QRModal)" render-mode="Static" />
+<!-- Delete Modal -->
+@await Component.InvokeAsync("DeleteModal", new {
+    IsServer = false
+})
+<!-- Edit Modal -->
+@await Component.InvokeAsync("UpdateClientModal", new {
+    Servers = servers
+})
+<!-- Sync Modal -->
+@await Component.InvokeAsync("SyncUserModal")
+
+@section Scripts {
+    <script src="js/wireguard.js"></script>
+    <script src="js/wgelements.js"></script>
+    <script>
+        document.getElementById("QRModal").addEventListener('shown.coreui.modal', (event) => {
+            let Id = event.relatedTarget.closest('tr').getAttribute('data-id');
+            const xhttp = new XMLHttpRequest();
+            xhttp.onload = function () {
+                document.querySelector('#QRModal img.img-thumbnail').setAttribute("src", "data:image/png;base64, " + this.responseText);
+            }
+            xhttp.open("GET", "/Clients/QR?id=" + Id, true);
+            xhttp.send();
+        });
+    </script>
+}

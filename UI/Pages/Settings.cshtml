@@ -1,0 +1,145 @@
+﻿@page "{handler?}"
+@using MTWireGuard.Application.Models.Mikrotik
+@model SettingsModel
+@{
+    ViewData["Title"] = "System Settings";
+    ViewData["Breadcrumb"] = "Settings";
+    var servers = (List<WGServerViewModel>)ViewData["servers"];
+    var info = (MTInfoViewModel)ViewData["info"];
+    var HDDPercent = (info.UsedHDDBytes * 100) / info.TotalHDDBytes;
+    var RAMPercent = (info.UsedRAMBytes * 100) / info.TotalRAMBytes;
+    var name = ViewData["name"].ToString();
+}
+
+<div class="row">
+    <div class="col-xs-6 col-sm-4 col-lg-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="fs-4 fw-semibold">@info.FreeHDD</div>
+                <div>Free Disk Space</div>
+                <div class="progress progress-white progress-thin my-2">
+                    <div class="progress-bar" role="progressbar" style="width: @HDDPercent%" aria-valuenow="@HDDPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                </div><small class="text-medium-emphasis-inverse">Used @info.UsedHDD of @info.TotalHDD</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-lg-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="fs-4 fw-semibold">@info.FreeRAM</div>
+                <div>Free RAM Space</div>
+                <div class="progress progress-white progress-thin my-2">
+                    <div class="progress-bar" role="progressbar" style="width: @RAMPercent%" aria-valuenow="@RAMPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                </div><small class="text-medium-emphasis-inverse">Used @info.UsedRAM of @info.TotalRAM</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xs-6 col-sm-4 col-lg-4">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="text-medium-emphasis-inverse text-end mb-2">
+                    <svg class="icon icon-xxl">
+                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-speedometer"></use>
+                    </svg>
+                </div>
+                <div class="fs-4 fw-semibold">@info.UPTime</div>
+                <small class="text-medium-emphasis-inverse text-uppercase fw-semibold">UPTime</small>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row my-2">
+    <div class="col-sm-6 col-lg-4">
+        <div class="card mb-4" style="--cui-card-cap-bg: #7D50B9">
+            <div class="card-header position-relative d-flex justify-content-center align-items-center">
+                <svg class="icon icon-3xl text-white my-4">
+                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-router"></use>
+                </svg>
+                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
+                    <canvas id="social-box-chart-1" height="90"></canvas>
+                </div>
+            </div>
+            <div class="card-body row text-center">
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.Architecture</div>
+                    <div class="text-uppercase text-medium-emphasis small">Arch</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.Platform</div>
+                    <div class="text-uppercase text-medium-emphasis small">Platform</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.BoardName</div>
+                    <div class="text-uppercase text-medium-emphasis small">Board</div>
+                </div>
+            </div>
+            <div class="card-footer row bg-light px-3 py-2 m-0">
+                <a class="btn-block text-medium-emphasis d-flex justify-content-center align-items-center text-decoration-none col" href="#">
+                    <span class="small fw-semibold">Identity: @name</span>
+                </a>
+                <div class="vr"></div>
+                <a class="btn-block text-medium-emphasis d-flex justify-content-center align-items-center text-decoration-none col" href="#">
+                    <span class="small fw-semibold">Version: @info.Version</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card mb-4" style="--cui-card-cap-bg: #4FA3A5">
+            <div class="card-header position-relative d-flex justify-content-center align-items-center">
+                <svg class="icon icon-3xl text-white my-4">
+                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-aperture"></use>
+                </svg>
+                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
+                    <canvas id="social-box-chart-1" height="90"></canvas>
+                </div>
+            </div>
+            <div class="card-body row text-center">
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.CPU</div>
+                    <div class="text-uppercase text-medium-emphasis small">CPU</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.CPUCount</div>
+                    <div class="text-uppercase text-medium-emphasis small">Cores</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold">@info.CPUFrequency</div>
+                    <div class="text-uppercase text-medium-emphasis small">Frequency</div>
+                </div>
+                <div class="vr"></div>
+                <div class="col">
+                    <div class="fs-5 fw-semibold" id="cpuLoad">@info.CPULoad %</div>
+                    <div class="text-uppercase text-medium-emphasis small">Usage</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<div class="col-sm-6 col-lg-4">
+        <div class="card text-bg-dark">
+            <div class="card-header">
+                Fix MSS
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Fix problems loading apps like Instagram</h5>
+                <p class="card-text">This will fix problems with loading some applications such as Instagram by changing TCP MSS.</p>
+                <select class="form-select" aria-label="Default select example">
+                    @foreach (var server in servers)
+                    {
+                        <option value="@server.Id">@server.Name</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-info mt-2">
+                    <span class="cil-contrast btn-icon mr-2"></span> Fix
+                </button>
+            </div>
+        </div>
+    </div>-->
+</div>
+
+@section Scripts {
+}

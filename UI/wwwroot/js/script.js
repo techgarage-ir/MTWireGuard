@@ -41,7 +41,16 @@ dropdownBTNs.forEach(btn => {
 document.addEventListener("DOMContentLoaded", function (event) {
     refreshSidebar();
     refreshTables();
+    loadCalendarify();
 });
+
+function loadCalendarify() {
+    let dateInputs = document.getElementsByClassName('date-input');
+    for (var i = 0; i < dateInputs.length; i++) {
+        let dateInput = dateInputs.item(i);
+        new tempusDominus.TempusDominus(document.getElementById(dateInput.id));
+    }
+}
 
 function loadServers() {
     fetch("/Servers/getAll")

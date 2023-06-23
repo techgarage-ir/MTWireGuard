@@ -21,7 +21,7 @@ namespace MTWireGuard.Application.Services
             string MT_IP = Environment.GetEnvironmentVariable("MT_IP");
             string MT_USER = Environment.GetEnvironmentVariable("MT_USER");
             string MT_PASS = Environment.GetEnvironmentVariable("MT_PASS");
-            this.wrapper = new(MT_IP, MT_USER, MT_PASS);
+            wrapper = new(MT_IP, MT_USER, MT_PASS);
         }
         public async Task<List<LogViewModel>> GetLogsAsync()
         {
@@ -144,12 +144,16 @@ namespace MTWireGuard.Application.Services
             if (model.Success)
             {
                 var item = model.Item as MikrotikAPI.Models.WGPeer;
+                var userID = Convert.ToInt32(item.Id[1..], 16);
+                var expireID = (peer.Expire != new DateTime()) ? HangfireManager.SetUserExpiration(userID, peer.Expire) : 0;
                 await dbContext.Users.AddAsync(new()
                 {
-                     Id = Convert.ToInt32(item.Id[1..], 16),
+                     Id = userID,
                      Name = peer.Name,
                      PrivateKey = peer.PrivateKey,
-                     PublicKey = peer.PublicKey
+                     PublicKey = peer.PublicKey,
+                     Expire = peer.Expire,
+                     ExpireID = expireID
                 });
                 await dbContext.SaveChangesAsync();
             }
@@ -211,6 +215,7 @@ namespace MTWireGuard.Application.Services
             {
                 var exists = await dbContext.Users.FindAsync(user.Id);
                 dbContext.ChangeTracker.Clear();
+                var expireID = (user.Expire != new DateTime()) ? HangfireManager.SetUserExpiration(user.Id, user.Expire) : 0;
                 if (exists != null)
                 {
                     dbContext.Users.Update(new()
@@ -218,7 +223,9 @@ namespace MTWireGuard.Application.Services
                         Id = user.Id,
                         Name = user.Name ?? exists.Name,
                         PrivateKey = user.PrivateKey ?? exists.PrivateKey,
-                        PublicKey = user.PublicKey ?? exists.PublicKey
+                        PublicKey = user.PublicKey ?? exists.PublicKey,
+                        Expire = user.Expire,
+                        ExpireID = expireID
                     });
                 }
                 else
@@ -227,7 +234,9 @@ namespace MTWireGuard.Application.Services
                         Id = user.Id,
                         Name = user.Name,
                         PublicKey = user.PublicKey,
-                        PrivateKey = user.PrivateKey
+                        PrivateKey = user.PrivateKey,
+                        Expire = user.Expire,
+                        ExpireID = expireID
                     });
                 await dbContext.SaveChangesAsync();
             }
@@ -305,11 +314,9 @@ namespace MTWireGuard.Application.Services
             if (disposing)
             {
                 // Free any other managed objects here.
-                //
             }
 
             // Free any unmanaged objects here.
-            //
             disposed = true;
         }
     }

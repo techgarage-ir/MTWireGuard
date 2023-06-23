@@ -38,7 +38,9 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.UploadBytes,
                     opt => opt.MapFrom(src => Convert.ToInt64(src.TX)))
                 .ForMember(dest => dest.DownloadBytes,
-                    opt => opt.MapFrom(src => Convert.ToInt64(src.RX)));
+                    opt => opt.MapFrom(src => Convert.ToInt64(src.RX)))
+                .ForMember(dest => dest.Expire,
+                    opt => opt.MapFrom(src => ExpireDateToString(src)));
 
             // WGPeer
             CreateMap<UserCreateModel, WGPeerCreateModel>();
@@ -48,7 +50,9 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => $"*{src.Id:X}"));
 
             // DBUser
-            CreateMap<WGPeerViewModel, WGPeerDBModel>();
+            CreateMap<WGPeerViewModel, WGPeerDBModel>()
+                .ForMember(dest => dest.Expire,
+                    opt => opt.MapFrom(src => ExpireStringToDate(src.Expire)));
             CreateMap<UserSyncModel, WGPeerDBModel>();
             CreateMap<UserSyncModel, WGPeerUpdateModel>()
                 .ForMember(dest => dest.Id,
@@ -66,6 +70,23 @@ namespace MTWireGuard.Application.Mapper
         {
             var db = Provider.GetService<DBContext>();
             return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).PrivateKey : "";
+        }
+
+        private DateTime GetPeerExpire(WGPeer source)
+        {
+            var db = Provider.GetService<DBContext>();
+            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).Expire ?? new() : new();
+        }
+
+        private string ExpireDateToString(WGPeer source)
+        {
+            var expireDate = GetPeerExpire(source);
+            return expireDate != new DateTime() ? expireDate.ToString() : "Unlimited";
+        }
+
+        private DateTime ExpireStringToDate(string expire)
+        {
+            return expire == "Unlimited" ? new() : Convert.ToDateTime(expire);
         }
 
         private bool HasDifferences(WGPeer source)

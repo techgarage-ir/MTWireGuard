@@ -59,7 +59,7 @@ app.UseHttpsRedirection();
 
 // Ensure Database Exists
 var serviceScope = app.Services.CreateScope().ServiceProvider;
-serviceScope.GetService<DBContext>().Database.EnsureCreated();
+//serviceScope.GetService<DBContext>().Database.EnsureCreated();
 
 if (!app.Environment.IsDevelopment())
     app.UseStaticFiles();

@@ -12,5 +12,6 @@
         public string Interface { get; set; }
         public int KeepAlive { get; set; }
         public bool Enabled { get; set; }
+        public string Expire { get; set; }
     }
 }

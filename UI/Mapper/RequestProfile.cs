@@ -17,7 +17,9 @@ namespace MTWireGuard.Mapper
                 .ForMember(dest => dest.EndpointAddress,
                     opt => opt.MapFrom(src => src.Endpoint))
                 .ForMember(dest => dest.PersistentKeepalive,
-                    opt => opt.MapFrom(src => src.KeepAlive.ToString()));
+                    opt => opt.MapFrom(src => src.KeepAlive.ToString()))
+                .ForMember(dest => dest.Expire,
+                    opt => opt.MapFrom(src => Convert.ToDateTime(src.Expire)));
 
             CreateMap<SyncUserRequest, UserSyncModel>();
 
@@ -25,7 +27,9 @@ namespace MTWireGuard.Mapper
                 .ForMember(dest => dest.EndpointAddress,
                     opt => opt.MapFrom(src => src.Endpoint))
                 .ForMember(dest => dest.PersistentKeepalive,
-                    opt => opt.MapFrom(src => src.KeepAlive));
+                    opt => opt.MapFrom(src => src.KeepAlive))
+                .ForMember(dest => dest.Expire,
+                    opt => opt.MapFrom(src => Convert.ToDateTime(src.Expire)));
 
             // Server Request
             CreateMap<CreateServerRequest, ServerCreateModel>()

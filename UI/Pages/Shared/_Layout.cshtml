@@ -33,6 +33,9 @@
     <!-- Simplebar styles-->
     <link rel="stylesheet" href="vendors/simplebar/css/simplebar.css">
     <link rel="stylesheet" href="css/vendors/simplebar.css">
+    <!-- Calendarify -->
+    <link href="vendors/calendarify/calendarify.min.css" rel="stylesheet">
+    <link href="vendors/tempus/css/tempus-dominus.min.css" rel="stylesheet">
     <!-- Main styles-->
     <link href="css/style.css" rel="stylesheet">
     <link href="css/gradients.css" rel="stylesheet">
@@ -181,7 +184,7 @@
             </div>
         </header>
         <div class="body flex-grow-1 px-3">
-            <div class="container-lg">
+            <div class="m-1">
                 @RenderBody()
             </div>
         </div>
@@ -194,6 +197,9 @@
     <!-- CoreUI and necessary plugins-->
     <script src="vendors/coreui/coreui/js/coreui.bundle.min.js"></script>
     <script src="vendors/simplebar/js/simplebar.min.js"></script>
+    <script src="vendors/calendarify/calendarify.iife.js"></script>
+    <script src="https://unpkg.com/@@popperjs/core@@^2.0.0"></script>
+    <script src="vendors/tempus/js/tempus-dominus.min.js"></script>
     <script src="js/script.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

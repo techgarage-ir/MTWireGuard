@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using MTWireGuard;
+﻿using Hangfire;
+using Hangfire.Storage.SQLite;
+using Microsoft.Extensions.DependencyInjection;
 using MTWireGuard.Application.Mapper;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Services;
@@ -13,6 +14,13 @@ namespace MTWireGuard.Application
         {
             // Add DBContext
             services.AddDbContext<DBContext>(ServiceLifetime.Singleton);
+
+            // Add HangFire
+            services.AddHangfire(config =>
+            {
+                config.UseSQLiteStorage(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "MikrotikWireguard.db"));
+            });
+            services.AddHangfireServer();
 
             // Auto Mapper Configurations
             services.AddSingleton<PeerMapping>();
@@ -28,6 +36,7 @@ namespace MTWireGuard.Application
 
             // Add Mikrotik API Service
             services.AddSingleton<IMikrotikRepository, MTAPI>();
+
         }
     }
 }

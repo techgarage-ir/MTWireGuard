@@ -1,3 +1,11 @@
 ﻿.logs-table tr td:nth-of-type(odd) {
     background-color: var(--cui-table-striped-bg);
 }
+
+.calendarify .wrapper {
+    padding-left: 0 !important;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+    /*display: none;*/
+}

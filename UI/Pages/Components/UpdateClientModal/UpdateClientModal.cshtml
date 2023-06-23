@@ -22,7 +22,7 @@
                 <div class="mb-3 row">
                     <label for="WGPUInterface" class="col-sm-3 col-form-label user-select-none">Interface</label>
                     <div class="col-sm-9">
-                        <select class="form-select" id="WGPUInterface" name="Interface" aria-label="Default select example">
+                        <select class="form-select" id="WGPUInterface" name="Interface">
                             @foreach (var server in Servers)
                             {
                                 @if (server.IsEnabled)
@@ -84,6 +84,15 @@
                     <label for="WGPUKeepAlive" class="col-sm-3 col-form-label user-select-none">Persistent Keepalive</label>
                     <div class="col-sm-9">
                         <input type="text" class="form-control" id="WGPUKeepAlive" name="KeepAlive" placeholder="Seconds">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="WGPUExpireInput" class="col-sm-3 col-form-label user-select-none">Expire</label>
+                    <div class="input-group w-75 col-sm-9 date-input" id="WGPUExpire" data-td-target-input="nearest" data-td-target-toggle="nearest">
+                        <input id="WGPUExpireInput" type="text" class="form-control" data-td-target="#WGPUExpire" />
+                        <span class="input-group-text" data-td-target="#WGPUExpire" data-td-toggle="datetimepicker">
+                            <i class="fas fa-calendar"></i>
+                        </span>
                     </div>
                 </div>
                 <input type="hidden" asp-for="ID" />

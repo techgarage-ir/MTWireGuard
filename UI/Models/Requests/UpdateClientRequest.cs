@@ -12,5 +12,6 @@
         public string PublicKey { get; set; }
         public string Interface { get; set; }
         public int KeepAlive { get; set; }
+        public string Expire { get; set; }
     }
 }

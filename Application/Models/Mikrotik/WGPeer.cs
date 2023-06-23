@@ -11,6 +11,8 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string? Name { get; set; }
         public string PrivateKey { get; set; }
         public string PublicKey { get; set; }
+        public DateTime? Expire { get; set; }
+        public int? ExpireID { get; set; }
     }
 
     public class WGPeerViewModel
@@ -28,6 +30,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public long DownloadBytes { get; set; }
         public long UploadBytes { get; set; }
         public bool IsDifferent { get; set; }
+        public string Expire { get; set; }
     }
 
     public class UserCreateModel
@@ -42,6 +45,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PublicKey { get; set; }
         public string PresharedKey { get; set; }
         public string PersistentKeepalive { get; set; }
+        public DateTime Expire { get; set; }
     }
 
     public class UserSyncModel
@@ -64,5 +68,6 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PrivateKey { get; set; }
         public string PresharedKey { get; set; }
         public int PersistentKeepalive { get; set; }
+        public DateTime Expire { get; set; }
     }
 }

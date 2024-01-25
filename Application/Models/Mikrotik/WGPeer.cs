@@ -13,6 +13,12 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PublicKey { get; set; }
         public DateTime? Expire { get; set; }
         public int? ExpireID { get; set; }
+        public int RX { get; set; }
+        public int TX { get; set; }
+        public int TrafficLimit { get; set; }
+        public string? DNSAddress { get; set; }
+        public bool InheritDNS { get; set; }
+        public bool InheritIP { get; set; }
     }
 
     public class WGPeerViewModel
@@ -31,6 +37,12 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public long UploadBytes { get; set; }
         public bool IsDifferent { get; set; }
         public string Expire { get; set; }
+        public int Traffic { get; set; }
+        public uint TrafficUsed { get; set; }
+        public string LastHandshake { get; set; }
+        public string DNSAddress { get; set; }
+        public bool InheritDNS { get; set; }
+        public bool InheritIP { get; set; }
     }
 
     public class UserCreateModel
@@ -45,7 +57,11 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PublicKey { get; set; }
         public string PresharedKey { get; set; }
         public string PersistentKeepalive { get; set; }
-        public DateTime Expire { get; set; }
+        public DateTime? Expire { get; set; } = null;
+        public int Traffic { get; set; }
+        public string DNSAddress { get; set; }
+        public bool InheritDNS { get; set; }
+        public bool InheritIP { get; set; }
     }
 
     public class UserSyncModel
@@ -69,5 +85,9 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PresharedKey { get; set; }
         public int PersistentKeepalive { get; set; }
         public DateTime Expire { get; set; }
+        public int Traffic { get; set; }
+        public string DNSAddress { get; set; }
+        public bool InheritDNS { get; set; }
+        public bool InheritIP { get; set; }
     }
 }

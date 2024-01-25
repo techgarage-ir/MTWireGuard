@@ -1,9 +1,16 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.Extensions.Caching.Memory;
 using MikrotikAPI;
+using MikrotikAPI.Models;
+using MTWireGuard.Application.MinimalAPI;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
+using NetTools;
 using QRCoder;
+using System;
+using System.Security.Principal;
 
 namespace MTWireGuard.Application.Services
 {
@@ -11,16 +18,19 @@ namespace MTWireGuard.Application.Services
     {
         private readonly IMapper mapper;
         private readonly DBContext dbContext;
+        private readonly IMemoryCache memoryCache;
         private readonly APIWrapper wrapper;
+        private readonly string MT_IP, MT_USER, MT_PASS;
         private bool disposed = false;
-        public MTAPI(IMapper mapper, DBContext dbContext)
+        public MTAPI(IMapper mapper, DBContext dbContext, IMemoryCache memoryCache)
         {
             this.mapper = mapper;
             this.dbContext = dbContext;
+            this.memoryCache = memoryCache;
 
-            string MT_IP = Environment.GetEnvironmentVariable("MT_IP");
-            string MT_USER = Environment.GetEnvironmentVariable("MT_USER");
-            string MT_PASS = Environment.GetEnvironmentVariable("MT_PASS");
+            MT_IP = Environment.GetEnvironmentVariable("MT_IP");
+            MT_USER = Environment.GetEnvironmentVariable("MT_USER");
+            MT_PASS = Environment.GetEnvironmentVariable("MT_PASS");
             wrapper = new(MT_IP, MT_USER, MT_PASS);
         }
         public async Task<List<LogViewModel>> GetLogsAsync()
@@ -55,15 +65,25 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetUser($"*{id:X}");
             return mapper.Map<WGPeerViewModel>(model);
         }
+        public async Task<string> GetUserHandshake(string id)
+        {
+            var model = await wrapper.GetUserHandshake(id);
+            string input = model.LastHandshake;
+            if (input == null) return "never";
+            var ts = Helper.ConvertToTimeSpan(input);
+            return ts.ToString();
+        }
         public async Task<string> GetUserTunnelConfig(int id)
         {
             WGPeerViewModel User = await GetUser(id);
             WGServerViewModel Server = await GetServer(User.Interface);
             string IP = Environment.GetEnvironmentVariable("MT_PUBLIC_IP"),
-                Endpoint = Server != null ? $"{IP}:{Server.ListenPort}" : "";
+                Endpoint = Server != null ? $"{IP}:{Server.ListenPort}" : "",
+                DNS = !User.InheritDNS ? User.DNSAddress : Server.DNSAddress;
             return $"[Interface]{Environment.NewLine}" +
                 $"Address = {User.Address ?? "0.0.0.0/0"}{Environment.NewLine}" +
                 $"PrivateKey = {User.PrivateKey}{Environment.NewLine}" +
+                $"DNS = {DNS}" +
                 $"{Environment.NewLine}" +
                 $"[Peer]{Environment.NewLine}" +
                 $"AllowedIPs = 0.0.0.0/0{Environment.NewLine}" +
@@ -85,10 +105,16 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetInfo();
             return mapper.Map<MTInfoViewModel>(model);
         }
-        public async Task<MTIdentityViewModel> GetName()
+        public async Task<IdentityViewModel> GetName()
         {
             var model = await wrapper.GetName();
-            return mapper.Map<MTIdentityViewModel>(model);
+            return mapper.Map<IdentityViewModel>(model);
+        }
+        public async Task<CreationResult> SetName(IdentityUpdateModel identity)
+        {
+            var mtIdentity = mapper.Map<MikrotikAPI.Models.MTIdentityUpdateModel>(identity);
+            var model = await wrapper.SetName(mtIdentity);
+            return mapper.Map<CreationResult>(model);
         }
         public async Task<bool> TryConnectAsync()
         {
@@ -134,26 +160,76 @@ namespace MTWireGuard.Application.Services
         {
             var srv = mapper.Map<MikrotikAPI.Models.WGServerCreateModel>(server);
             var model = await wrapper.CreateServer(srv);
+            if (model.Success)
+            {
+                var addIP = await wrapper.CreateIPAddress(new()
+                {
+                    Address = server.IPAddress,
+                    Interface = server.Name
+                });
+                if (addIP.Success)
+                {
+                    var item = model.Item as WGServer;
+                    var serverId = Helper.ParseEntityID(item.Id);
+                    var mtDNS = (await GetDNS()).Servers;
+                    await dbContext.Servers.AddAsync(new()
+                    {
+                        Id = serverId,
+                        InheritDNS = server.InheritDNS,
+                        DNSAddress = server.InheritDNS ? mtDNS : server.DNSAddress,
+                        IPPoolId = server.IPPoolId,
+                        UseIPPool = server.UseIPPool
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+                else
+                    return mapper.Map<CreationResult>(addIP);
+            }
             return mapper.Map<CreationResult>(model);
         }
 
         public async Task<CreationResult> CreateUser(UserCreateModel peer)
         {
             var user = mapper.Map<MikrotikAPI.Models.WGPeerCreateModel>(peer);
+            var usedIPs = (await GetUsersAsync()).Where(u => u.Interface == peer.Interface).Select(u => u.Address);
+            var server = await GetServer(peer.Interface);
+            string allowedAddress = "0.0.0.0/0";
+            if (peer.InheritIP && !string.IsNullOrWhiteSpace(server.IPPool))
+            {
+                var range = IPAddressRange.Parse(server.IPPool);
+                foreach (var ip in range)
+                {
+                    if (ip.ToString() == range.Begin.ToString() || ip.ToString() == range.End.ToString()) continue; // Skip Network and Broadcast address
+                    if (server.IPAddress.Contains(ip.ToString())) continue; // Skip Gateway address
+                    if (usedIPs.Contains($"{ip}/32")) continue; // Skip if IP is used previously
+                    allowedAddress = ip.ToString();
+                    break;
+                }
+            }
+            user.AllowedAddress = allowedAddress;
+            //get dns
+            var inheritDNS = peer.InheritDNS;
+            string mtDns = (await GetDNS()).Servers;
+            string dnsAddress = (!inheritDNS) ? peer.DNSAddress : server.DNSAddress ?? string.Join(mtDns, ',');
+            //end dns
             var model = await wrapper.CreateUser(user);
             if (model.Success)
             {
                 var item = model.Item as MikrotikAPI.Models.WGPeer;
                 var userID = Convert.ToInt32(item.Id[1..], 16);
-                var expireID = (peer.Expire != new DateTime()) ? HangfireManager.SetUserExpiration(userID, peer.Expire) : 0;
+                var expireID = (peer.Expire != new DateTime() && peer.Expire != null) ? HangfireManager.SetUserExpiration(userID, (DateTime)peer.Expire) : 0;
                 await dbContext.Users.AddAsync(new()
                 {
-                     Id = userID,
-                     Name = peer.Name,
-                     PrivateKey = peer.PrivateKey,
-                     PublicKey = peer.PublicKey,
-                     Expire = peer.Expire,
-                     ExpireID = expireID
+                    Id = userID,
+                    Name = peer.Name,
+                    PrivateKey = peer.PrivateKey,
+                    PublicKey = peer.PublicKey,
+                    Expire = peer.Expire,
+                    ExpireID = expireID,
+                    TrafficLimit = peer.Traffic,
+                    DNSAddress = dnsAddress,
+                    InheritDNS = inheritDNS,
+                    InheritIP = peer.InheritIP
                 });
                 await dbContext.SaveChangesAsync();
             }
@@ -225,10 +301,16 @@ namespace MTWireGuard.Application.Services
                         PrivateKey = user.PrivateKey ?? exists.PrivateKey,
                         PublicKey = user.PublicKey ?? exists.PublicKey,
                         Expire = user.Expire,
-                        ExpireID = expireID
+                        ExpireID = expireID,
+                        InheritDNS = user.InheritDNS,
+                        DNSAddress = user.DNSAddress,
+                        InheritIP = user.InheritIP,
+                        TrafficLimit = user.Traffic
                     });
                 }
                 else
+                {
+                    dbContext.ChangeTracker.Clear();
                     await dbContext.Users.AddAsync(new()
                     {
                         Id = user.Id,
@@ -236,8 +318,13 @@ namespace MTWireGuard.Application.Services
                         PublicKey = user.PublicKey,
                         PrivateKey = user.PrivateKey,
                         Expire = user.Expire,
-                        ExpireID = expireID
+                        ExpireID = expireID,
+                        InheritDNS = user.InheritDNS,
+                        DNSAddress = user.DNSAddress,
+                        InheritIP = user.InheritIP,
+                        TrafficLimit = user.Traffic
                     });
+                }
                 await dbContext.SaveChangesAsync();
             }
             return mapper.Map<CreationResult>(mtUpdate);
@@ -246,8 +333,58 @@ namespace MTWireGuard.Application.Services
         public async Task<CreationResult> UpdateServer(ServerUpdateModel server)
         {
             var srv = mapper.Map<MikrotikAPI.Models.WGServerUpdateModel>(server);
-            var mtUpdate = await wrapper.UpdateServer(srv);
-            return mapper.Map<CreationResult>(mtUpdate);
+            var model = await wrapper.UpdateServer(srv);
+            if (model.Success)
+            {
+                var exists = await dbContext.Servers.FindAsync(server.Id);
+                dbContext.ChangeTracker.Clear();
+                var serverIP = await wrapper.GetServerIPAddress(server.Name);
+                var ipChanged = !serverIP.Select(ip => ip.Address).Contains(server.IPAddress);
+                bool ipChangeState = true;
+                if (ipChanged)
+                {
+                    var changeIP = serverIP.Any() ?
+                        await wrapper.UpdateIPAddress(new()
+                        {
+                            Id = serverIP.Find(ip => ip.Interface == server.Name).Id,
+                            Address = server.IPAddress
+                        }) : 
+                        await wrapper.CreateIPAddress(new()
+                        {
+                            Address = server.IPAddress,
+                            Interface = server.Name
+                        });
+                    ipChangeState = changeIP.Success;
+                }
+                if (ipChangeState)
+                {
+                    var mtDNS = (await GetDNS()).Servers;
+                    if (exists == null) // Server not exists in DB
+                    {
+                        await dbContext.Servers.AddAsync(new()
+                        {
+                            Id = server.Id,
+                            InheritDNS = server.InheritDNS,
+                            DNSAddress = server.InheritDNS ? mtDNS : server.DNSAddress,
+                            IPPoolId = server.IPPoolId,
+                            UseIPPool = server.UseIPPool
+                        });
+                    }
+                    else
+                    {
+                        dbContext.Servers.Update(new()
+                        {
+                            Id = server.Id,
+                            InheritDNS = server.InheritDNS,
+                            DNSAddress = !server.InheritDNS && server.DNSAddress != null ? server.DNSAddress : exists.DNSAddress,
+                            IPPoolId = server.IPPoolId,
+                            UseIPPool = server.UseIPPool
+                        });
+                    }
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+            return mapper.Map<CreationResult>(model);
         }
 
         public async Task<CreationResult> EnableServer(int id)
@@ -293,12 +430,119 @@ namespace MTWireGuard.Application.Services
         public async Task<CreationResult> DeleteServer(int id)
         {
             var delete = await wrapper.DeleteServer($"*{id:X}");
+            if (delete.Success)
+            {
+                var server = await dbContext.Servers.FindAsync(id);
+                if (server != null)
+                {
+                    dbContext.Servers.Remove(server);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
             return mapper.Map<CreationResult>(delete);
         }
         public async Task<CreationResult> DeleteUser(int id)
         {
             var delete = await wrapper.DeleteUser($"*{id:X}");
+            if (delete.Success)
+            {
+                var user = await dbContext.Users.FindAsync(id);
+                if (user != null)
+                {
+                    dbContext.Users.Remove(user);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
             return mapper.Map<CreationResult>(delete);
+        }
+
+        public async Task<List<ScriptViewModel>> GetScripts()
+        {
+            var model = await wrapper.GetScripts();
+            return mapper.Map<List<ScriptViewModel>>(model);
+        }
+
+        public async Task<CreationResult> CreateScript(Models.Mikrotik.ScriptCreateModel script)
+        {
+            /*var model = await wrapper.CreateScript(new MikrotikAPI.Models.ScriptCreateModel()
+            {
+                DontRequiredPermissions=false,
+                Name = "SendActivityUpdates",
+                Policy = "read,write,test",
+                Source = Helper.PeersLastHandshakeScript($"https://{MT_IP}:7220/api/activity")
+            });
+            return mapper.Map<CreationResult>(model);*/
+            var scr = mapper.Map<MikrotikAPI.Models.ScriptCreateModel>(script);
+            var model = await wrapper.CreateScript(scr);
+            return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<string> RunScript(string name)
+        {
+            return await wrapper.RunScript(name);
+        }
+
+        public async Task<List<SchedulerViewModel>> GetSchedulers()
+        {
+            var model = await wrapper.GetSchedulers();
+            return mapper.Map<List<SchedulerViewModel>>(model);
+        }
+
+        public async Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler)
+        {
+            var sched = mapper.Map<MikrotikAPI.Models.SchedulerCreateModel>(scheduler);
+            var model = await wrapper.CreateScheduler(sched);
+            return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<DNS> GetDNS()
+        {
+            return await wrapper.GetDNS();
+        }
+
+        public async Task<CreationResult> SetDNS(DNSUpdateModel dns)
+        {
+            var mtDNS= mapper.Map<MikrotikAPI.Models.MTDNSUpdateModel>(dns);
+            var model = await wrapper.SetDNS(mtDNS);
+            return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<List<IPPoolViewModel>> GetIPPools()
+        {
+            var model = await wrapper.GetIPPools();
+            return mapper.Map<List<IPPoolViewModel>>(model);
+        }
+
+        public async Task<CreationResult> CreateIPPool(PoolCreateModel ipPool)
+        {
+            var pool = mapper.Map<IPPoolCreateModel>(ipPool);
+            var model = await wrapper.CreateIPPool(pool);
+            return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> UpdateIPPool(PoolUpdateModel ipPool)
+        {
+            var pool = mapper.Map<IPPoolUpdateModel>(ipPool);
+            var model = await wrapper.UpdateIPPool(pool);
+            return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> DeleteIPPool(int id)
+        {
+            var delete = await wrapper.DeleteIPPool($"*{id:X}");
+            return mapper.Map<CreationResult>(delete);
+        }
+
+        public async Task<List<IPAddressViewModel>> GetIPAddresses()
+        {
+            var model = await wrapper.GetIPAddresses();
+            return mapper.Map<List<IPAddressViewModel>>(model);
+        }
+
+        public async Task<List<IPAddressViewModel>> GetServerIP(string Name)
+        {
+            var model = await wrapper.GetServerIPAddress(Name);
+            return mapper.Map<List<IPAddressViewModel>>(model);
         }
 
         public void Dispose()
@@ -314,6 +558,8 @@ namespace MTWireGuard.Application.Services
             if (disposing)
             {
                 // Free any other managed objects here.
+                dbContext.Dispose();
+                memoryCache.Dispose();
             }
 
             // Free any unmanaged objects here.

@@ -1,6 +1,6 @@
-﻿using MTWireGuard.Application.Models;
+﻿using MikrotikAPI.Models;
+using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
-using MikrotikAPI.Models;
 
 namespace MTWireGuard.Application.Repositories
 {
@@ -12,15 +12,22 @@ namespace MTWireGuard.Application.Repositories
         Task<List<ServerTrafficViewModel>> GetServersTraffic();
         Task<List<WGPeerViewModel>> GetUsersAsync();
         Task<WGPeerViewModel> GetUser(int id);
+        Task<string> GetUserHandshake(string id);
         Task<string> GetUserTunnelConfig(int id);
         Task<string> GetQRCodeBase64(int id);
         Task<MTInfoViewModel> GetInfo();
-        Task<MTIdentityViewModel> GetName();
+        Task<IdentityViewModel> GetName();
+        Task<CreationResult> SetName(IdentityUpdateModel identity);
         Task<bool> TryConnectAsync();
         Task<List<ActiveUserViewModel>> GetActiveSessions();
         Task<List<JobViewModel>> GetJobs();
         Task<string> GetCurrentSessionID();
         Task<string> KillJob(string JobID);
+        Task<List<ScriptViewModel>> GetScripts();
+        Task<CreationResult> CreateScript(Models.Mikrotik.ScriptCreateModel script);
+        Task<string> RunScript(string name);
+        Task<List<SchedulerViewModel>> GetSchedulers();
+        Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler);
         Task<CreationResult> CreateServer(ServerCreateModel server);
         Task<CreationResult> CreateUser(UserCreateModel peer);
         Task<CreationResult> SyncUser(UserSyncModel user);
@@ -32,5 +39,13 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> DisableUser(int id);
         Task<CreationResult> DeleteServer(int id);
         Task<CreationResult> DeleteUser(int id);
+        Task<MikrotikAPI.Models.DNS> GetDNS();
+        Task<CreationResult> SetDNS(DNSUpdateModel dns);
+        Task<List<IPPoolViewModel>> GetIPPools();
+        Task<CreationResult> CreateIPPool(PoolCreateModel ipPool);
+        Task<CreationResult> UpdateIPPool(PoolUpdateModel ipPool);
+        Task<CreationResult> DeleteIPPool(int id);
+        Task<List<IPAddressViewModel>> GetIPAddresses();
+        Task<List<IPAddressViewModel>> GetServerIP(string Name);
     }
 }

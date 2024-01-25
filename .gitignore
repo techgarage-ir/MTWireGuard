@@ -366,3 +366,4 @@ FodyWeavers.xsd
 [Pp]ublished/
 *.tar
 .editorconfig
+/replaceStringInBranch.sh

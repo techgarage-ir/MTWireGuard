@@ -1,5 +1,11 @@
 ﻿using AutoMapper;
+using MTWireGuard.Application.MinimalAPI;
+using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
+using MTWireGuard.Application.Models.Requests;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace MTWireGuard.Application.Mapper
@@ -12,7 +18,7 @@ namespace MTWireGuard.Application.Mapper
             CreateMap<MikrotikAPI.Models.Log, LogViewModel>()
                 .ForMember(dest => dest.Id,
                     opt => opt.MapFrom(src => Convert.ToUInt64(src.Id.Substring(1), 16)))
-                .ForMember(dest =>dest.Topics,
+                .ForMember(dest => dest.Topics,
                     opt => opt.MapFrom(src => FormatTopics(src.Topics)));
 
             // Server Traffic
@@ -72,7 +78,15 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => FormatUptime(src.Uptime)));
 
             // Router Identity
-            CreateMap<MikrotikAPI.Models.MTIdentity, MTIdentityViewModel>();
+            CreateMap<MikrotikAPI.Models.MTIdentity, IdentityViewModel>();
+            CreateMap<IdentityUpdateModel, MikrotikAPI.Models.MTIdentityUpdateModel>();
+            CreateMap<UpdateIdentityRequest, IdentityUpdateModel>();
+
+            // Router DNS
+            CreateMap<DNSUpdateModel, MikrotikAPI.Models.MTDNSUpdateModel>()
+                .ForMember(dest => dest.Servers,
+                    opt => opt.MapFrom(src => string.Join(',', src.Servers)));
+            CreateMap<UpdateDNSRequest, DNSUpdateModel>();
 
             // Active Users
             CreateMap<MikrotikAPI.Models.ActiveUser, ActiveUserViewModel>()
@@ -89,6 +103,76 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => Convert.ToInt16(src.NextId.Substring(1), 16)))
                 .ForMember(dest => dest.Policies,
                     opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()));
+
+            // Scripts
+            CreateMap<MikrotikAPI.Models.Script, ScriptViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Convert.ToInt16(src.Id.Substring(1), 16)))
+                .ForMember(dest => dest.IsValid,
+                    opt => opt.MapFrom(src => !src.Invalid))
+                .ForMember(dest => dest.LastStarted,
+                    // opt => opt.MapFrom(src => DateTime.ParseExact(src.LastStarted, "MMM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)))
+                    opt => opt.MapFrom(src => ConvertToDateTime(src.LastStarted)))
+                .ForMember(dest => dest.Policies,
+                    opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()));
+            CreateMap<ScriptCreateModel, MikrotikAPI.Models.ScriptCreateModel>()
+                .ForMember(dest => dest.Policy,
+                    opt => opt.MapFrom(src => string.Join(',', src.Policies)));
+
+            // Schedulers
+            CreateMap<MikrotikAPI.Models.Scheduler, SchedulerViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Convert.ToInt16(src.Id.Substring(1), 16)))
+                .ForMember(dest => dest.StartDate,
+                    opt => opt.MapFrom(src => ConvertToDate(src.StartDate)))
+                .ForMember(dest => dest.StartTime,
+                    opt => opt.MapFrom(src => (src.StartTime != "startup") ? TimeSpan.ParseExact(src.StartTime, "hh\\:mm\\:ss", CultureInfo.InvariantCulture) : new TimeSpan()))
+                .ForMember(dest => dest.Interval,
+                    opt => opt.MapFrom(src => ConvertToTimeSpan(src.Interval)))
+                .ForMember(dest => dest.NextRun,
+                    opt => opt.MapFrom(src => ConvertToDateTime(src.NextRun)))
+                .ForMember(dest => dest.Policies,
+                    opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()))
+                .ForMember(dest => dest.Enabled,
+                    opt => opt.MapFrom(src => !src.Disabled));
+            CreateMap<SchedulerCreateModel, MikrotikAPI.Models.SchedulerCreateModel>()
+                .ForMember(dest => dest.Policy,
+                    opt => opt.MapFrom(src => string.Join(',', src.Policies)))
+                .ForMember(dest => dest.StartDate,
+                    opt => opt.MapFrom(src => DateToString(src.StartDate)))
+                .ForMember(dest => dest.StartTime,
+                    opt => opt.MapFrom(src => TimeToString(src.StartTime)))
+                .ForMember(dest => dest.Interval,
+                    opt => opt.MapFrom(src => TimeToString(src.Interval)));
+
+            // IPAddress
+            CreateMap<MikrotikAPI.Models.IPAddress, IPAddressViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.Enabled,
+                    opt => opt.MapFrom(src => !src.Disabled))
+                .ForMember(dest => dest.Valid,
+                    opt => opt.MapFrom(src => !src.Invalid));
+
+            // IP Pools
+            CreateMap<MikrotikAPI.Models.IPPool, IPPoolViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.Ranges,
+                    opt => opt.MapFrom(src => src.Ranges.Split(',', StringSplitOptions.None).ToList()));
+
+            // Data Usages
+            CreateMap<UsageObject, DataUsage>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.UserID,
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.CreationTime,
+                    opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.RX,
+                    opt => opt.MapFrom(src => src.RX))
+                .ForMember(dest => dest.TX,
+                    opt => opt.MapFrom(src => src.TX));
         }
 
         private static List<string> FormatTopics(string topics)
@@ -121,6 +205,82 @@ namespace MTWireGuard.Application.Mapper
             minute = int.Parse(minute.RemoveNonNumerics()).ToString("D2");
             second = int.Parse(second.RemoveNonNumerics()).ToString("D2");
             return $"{week}w {day}d {hour}:{minute}:{second}";
+        }
+
+        private static TimeSpan FormatTime(string timeString)
+        {
+            TimeSpan timeSpan = TimeSpan.Zero;
+            if (TimeSpan.TryParseExact(timeString, @"h\hm\ms\s", null, out timeSpan))
+            {
+                return timeSpan;
+            }
+            else
+            {
+                throw new Exception("Invalid TimeSpan format");
+            }
+        }
+
+        private static TimeSpan ConvertToTimeSpan(string input)
+        {
+            int hours = 0;
+            int minutes = 0;
+            int seconds = 0;
+
+            string[] parts = input.Split('h', 'm', 's');
+
+            foreach (string part in parts)
+            {
+                if (string.IsNullOrEmpty(part))
+                    continue;
+
+                if (int.TryParse(part, out int value))
+                {
+                    if (input.Contains('h'))
+                    {
+                        hours = value;
+                    }
+                    else if (input.Contains('m'))
+                    {
+                        minutes = value;
+                    }
+                    else if (input.Contains('s'))
+                    {
+                        seconds = value;
+                    }
+                }
+            }
+
+            return new TimeSpan(hours, minutes, seconds);
+        }
+
+        private static DateTime ConvertToDateTime(string input)
+        {
+            //input ??= "00:00:00";
+            string inputs = input == null || input == "" ? "00:00:00" : input;
+            string[] formats = ["yyyy-MM-dd HH:mm:ss", "MMM/dd HH:mm:ss", "HH:mm:ss"];
+            try
+            {
+                return DateTime.ParseExact(inputs, formats, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private static DateOnly ConvertToDate(string input)
+        {
+            return DateOnly.ParseExact(input, ["MMM/dd/yyyy", "yyyy-MM-dd"]);
+        }
+
+        private static string DateToString(DateOnly? date)
+        {
+            return date.HasValue ? date.Value.ToString("yyyy-MM-dd") : string.Empty;
+        }
+
+        private static string TimeToString(TimeSpan? time)
+        {
+            return time.HasValue ? time.Value.ToString(@"hh\:mm\:ss") : string.Empty;
         }
     }
 }

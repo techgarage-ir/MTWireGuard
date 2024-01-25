@@ -3,97 +3,201 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Dashboard";
-    ViewData["Breadcrumb"] = "Home";
-    var users = (List<WGPeerViewModel>)ViewData["users"];
-    var servers = (List<WGServerViewModel>)ViewData["servers"];
-    var uptr = ViewData["uptr"];
-    var downtr = ViewData["downtr"];
 }
 
-<div class="row">
-    <div class="col-sm-6 col-lg-4">
-        <div class="card mb-4" style="--cui-card-cap-bg: #88171a">
-            <div class="card-header position-relative d-flex justify-content-center align-items-center">
-                <svg class="icon icon-3xl text-white my-4">
-                    <use xlink:href="vendors/coreui/icons/svg/brand.svg#cib-wireguard"></use>
-                </svg>
-                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
-                    <canvas id="social-box-chart-1" height="90"></canvas>
-                </div>
-            </div>
-            <div class="card-body row text-center">
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@servers.Count</div>
-                    <div class="text-uppercase text-medium-emphasis small">Servers</div>
-                </div>
-                <div class="vr"></div>
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@servers.Where(x => x.Running).Count()</div>
-                    <div class="text-uppercase text-medium-emphasis small">Active</div>
+<h3>Server/Clients Brief</h3>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Total Servers</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-total">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-primary">
+                            <i class="bx bx-radar bx-sm"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-4">
-        <div class="card mb-4" style="--cui-card-cap-bg: #0d6efd">
-            <div class="card-header position-relative d-flex justify-content-center align-items-center">
-                <svg class="icon icon-3xl text-white my-4">
-                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-lan"></use>
-                </svg>
-                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
-                    <canvas id="social-box-chart-1" height="90"></canvas>
-                </div>
-            </div>
-            <div class="card-body row text-center">
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@users.Count</div>
-                    <div class="text-uppercase text-medium-emphasis small">Users</div>
-                </div>
-                <div class="vr"></div>
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@users.Where(x => !x.CurrentAddress.EndsWith(":0")).Count()</div>
-                    <div class="text-uppercase text-medium-emphasis small">Online</div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Active Servers</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-active">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-danger">
+                            <i class="bx bx-broadcast bx-sm"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-4">
-        <div class="card mb-4" style="--cui-card-cap-bg: #0dcaf0">
-            <div class="card-header position-relative d-flex justify-content-center align-items-center">
-                <svg class="icon icon-3xl text-white my-4">
-                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-graph"></use>
-                </svg>
-                <div class="chart-wrapper position-absolute top-0 start-0 w-100 h-100">
-                    <canvas id="social-box-chart-1" height="90"></canvas>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Total Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-total">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-warning">
+                            <i class="bx bx-group bx-sm"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div class="card-body row text-center">
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@uptr</div>
-                    <div class="text-uppercase text-medium-emphasis small">Upload</div>
-                </div>
-                <div class="vr"></div>
-                <div class="col">
-                    <div class="fs-5 fw-semibold">@downtr</div>
-                    <div class="text-uppercase text-medium-emphasis small">Download</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Online Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-online">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-success">
+                            <i class="bx bx-user-voice bx-sm"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-sm-12 col-lg-6">
-        @await Component.InvokeAsync("CreateServerForm")
+<div class="row g-4">
+    <div class="col-sm-12 col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Mikrotik Statistics</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-responsive">
+                    <tbody>
+                        <tr>
+                            <th>Identity</th>
+                            <td id="info-identity"></td>
+                        </tr>
+                        <tr>
+                            <th>Device</th>
+                            <td id="info-device"></td>
+                        </tr>
+                        <tr>
+                            <th>OS Version</th>
+                            <td id="info-version"></td>
+                        </tr>
+                        <tr>
+                            <th>Public IPv4</th>
+                            <td id="info-ip"></td>
+                        </tr>
+                        <tr>
+                            <th>DNS Servers</th>
+                            <td id="info-dns"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="col-sm-12 col-lg-6">
-        @await Component.InvokeAsync("CreateClientForm", new {
-            Servers = servers
-        })
+    <div class="col-sm-12 col-md-3">
+        <div class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title">Recently Online Users</h5>
+            </div>
+            <div class="card-body">
+                <div class="card-datatable table-responsive pt-0">
+                    <table class="datatables-basic table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-3">
+        <div class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title">MTWireguard</h5>
+            </div>
+            <div class="card-body text-center">
+                <img class="w-50" src="img/logo.png" alt="" srcset="">
+                <small class="d-block mb-1">v@(Application.Helper.GetProjectVersion())</small>
+                <ul class="list-group list-unstyled border border-2 rounded-3">
+                    <li>
+                        <a class="list-group-item d-flex align-items-center bg-gradient-green" href="https://MTWireguard.techgarage.ir/">
+                            <i class='bx bxs-book ms-2 me-4'></i>
+                            <span>Documentation</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="list-group-item d-flex align-items-center bg-gradient-yellow" href="https://hub.docker.com/r/techgarageir/mtwireguard/">
+                            <i class='bx bxl-docker ms-2 me-4'></i>
+                            <span>Docker</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="list-group-item d-flex align-items-center bg-gradient-red" href="https://github.com/techgarage-ir/MTWireGuard/">
+                            <i class='bx bxl-github ms-2 me-4'></i>
+                            <span>Github</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="list-group-item d-flex align-items-center bg-gradient-blue" href="https://t.me/MTWireguard">
+                            <i class='bx bxl-telegram ms-2 me-4'></i>
+                            <span>Telegram Channel</span>
+                        </a>
+                    </li>
+                    <li>
+                        <button class="list-group-item d-flex align-items-center bg-gradient-purple w-100" data-bs-toggle="modal" data-bs-target="#updateModal">
+							<i class='bx bx-revision ms-2 me-4'></i>
+                            <span>Check For Updates</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Checking Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="updateModalLabel">Not available</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This feature will come in next versions.</p>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="vendors/coreui/utils/js/coreui-utils.js"></script>
-    <script src="js/wireguard.js"></script>
-    <script src="js/wgelements.js"></script>
+    <script src="js/page-home.js"></script>
 }

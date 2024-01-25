@@ -1,0 +1,123 @@
+﻿@page
+@model MTWireGuard.Pages.PoolsModel
+@{
+    ViewData["Title"] = "IP Pools";
+}
+<!-- Pools List Table -->
+<div class="card">
+    <div class="card-header border-bottom">
+        <h5 class="card-title">IP Pools</h5>
+    </div>
+    <div class="card-body">
+        <div class="card-datatable table-responsive pt-0">
+            <table class="datatables-basic table table-striped table-hover border-top">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Next Pool</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <!-- Offcanvas to add pool -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddPool" aria-labelledby="offcanvasAddPoolLabel">
+        <div class="offcanvas-header">
+            <h5 id="offcanvasAddPoolLabel" class="offcanvas-title">Add Pool</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body mx-0 flex-grow-0">
+            <form class="add-new-pool pt-0" id="addPoolForm" onsubmit="return false">
+                <div class="mb-3">
+                    <label class="form-label" for="add-name">Name</label>
+                    <input type="text" class="form-control" id="add-name" name="Name" aria-label="Name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center justify-content-between" for="add-addresses">
+                        Ranges
+                        <button type="button" id="addRangeBtn" class="btn btn-success rounded-1">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </label>
+                    <div class="d-flex justify-content-end mt-2"></div>
+                    <div class="form-group" id="add-addresses">
+                        <div class="input-group my-1">
+                            <input type="text" name="Ranges[]" class="form-control" aria-label="Range" aria-describedby="removeField1">
+                            <span class="input-group-text text-danger" id="removeField1" role="button" onclick="removeRangeInputGroup(this)">
+                                <i class="bx bx-minus"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="add-next">Next Pool</label>
+                    <select id="add-next" name="NextPool" class="form-select">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
+                <button type="reset" class="btn btn-danger" data-bs-dismiss="offcanvas">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <!-- Offcanvas to add pool -->
+    <!-- Offcanvas to edit pool -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditPool" aria-labelledby="offcanvasEditPoolLabel">
+        <div class="offcanvas-header">
+            <h5 id="offcanvasEditPoolLabel" class="offcanvas-title">Edit Pool</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body mx-0 flex-grow-0">
+            <form class="edit-new-pool pt-0" id="editPoolForm" onsubmit="return false">
+                <input type="hidden" id="edit-id" name="ID">
+                <div class="mb-3">
+                    <label class="form-label" for="edit-name">Name</label>
+                    <input type="text" class="form-control" id="edit-name" name="Name" aria-label="Name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center justify-content-between" for="edit-addresses">
+                        Ranges
+                        <button type="button" id="editRangeBtn" class="btn btn-success rounded-1">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </label>
+                    <div class="d-flex justify-content-end mt-2">
+                    </div>
+                    <div class="form-group" id="edit-addresses">
+                        <div class="input-group my-1">
+                            <input type="text" name="Ranges[]" class="form-control" aria-label="Range" aria-describedby="removeField1">
+                            <span class="input-group-text text-danger" id="removeField1" role="button" onclick="removeRangeInputGroup(this)">
+                                <i class="bx bx-minus"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="edit-next">Next Pool</label>
+                    <select id="edit-next" name="NextPool" class="form-select">
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
+                <button type="reset" class="btn btn-danger" data-bs-dismiss="offcanvas">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <!-- Offcanvas to edit pool -->
+</div>
+
+@section Modals {
+    <!-- Details Modal -->
+    <component type="typeof(Components.Modals.DetailsModal)" render-mode="Static" />
+
+    <!-- Toasts -->
+    <component type="typeof(Components.ToastContainer)" render-mode="Static" />
+}
+
+@section Scripts {
+    <script src="js/helper.js"></script>
+    <script src="js/page-pools.js"></script>
+}

@@ -1,0 +1,46 @@
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "wireguard1",
+            "enabled": true,
+            "listen_port": 13121,
+            "mtu": 1500,
+            "private_key": "",
+            "public_key": "",
+            "ip_address": "172.17.0.1",
+            "ip_pool": "172.17.0.0/24",
+            "dns_address": "1.1.1.1",
+            "dns_inherit": false,
+            "running": true
+        },
+        {
+            "id": 2,
+            "name": "wg2",
+            "enabled": false,
+            "listen_port": 13122,
+            "mtu": 1500,
+            "private_key": "",
+            "public_key": "",
+            "ip_address": "172.17.1.1",
+            "ip_pool": "172.17.1.0/24",
+            "dns_address": "1.1.1.1",
+            "dns_inherit": false,
+            "running": true
+        },
+        {
+            "id": 3,
+            "name": "wgout",
+            "enabled": true,
+            "listen_port": 13123,
+            "mtu": 1500,
+            "private_key": "",
+            "public_key": "",
+            "ip_address": "192.168.100.1",
+            "ip_pool": "192.168.100.0/24",
+            "dns_address": "8.8.8.8",
+            "dns_inherit": false,
+            "running": true
+        }
+    ]
+}

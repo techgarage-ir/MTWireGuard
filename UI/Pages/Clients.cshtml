@@ -1,70 +1,133 @@
-﻿@page "{handler?}"
+﻿@page
 @using MTWireGuard.Application.Models.Mikrotik
 @model MTWireGuard.Pages.ClientsModel
 @{
     ViewData["Title"] = "Clients";
-    ViewData["Breadcrumb"] = "Users";
-    var servers = (List<WGServerViewModel>)ViewData["servers"];
 }
 
-<div class="row">
-    <div class="table-responsive">
-        <table class="table border mb-0">
-            <thead class="table-light fw-semibold">
-                <tr class="align-middle">
-                    <th class="text-center">
-                        <svg class="icon">
-                            <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-people"></use>
-                        </svg>
-                    </th>
-                    <th>Name</th>
-                    <th>Interface</th>
-                    <th>Address</th>
-                    <th>Traffic</th>
-                    <th>Expire</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Total Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-total">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-primary">
+                            <i class="bx bx-user bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Active Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-active">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-danger">
+                            <i class="bx bx-user-check bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Online Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-online">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-success">
+                            <i class="bx bx-group bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Pending Users</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="users-pending">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-warning">
+                            <i class="bx bx-user-voice bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<div class="row mt-2">
-    <div class="col-12">
-        @await Component.InvokeAsync("CreateClientForm", new {
-            Servers = servers
-        })
+<!-- Users List Table -->
+<div class="card">
+    <div class="card-header border-bottom">
+        <h5 class="card-title">WG Peers</h5>
     </div>
+    <div class="card-body">
+        <div class="card-datatable table-responsive pt-0">
+            <table class="datatables-basic table table-striped table-hover border-top">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Interface</th>
+                        <th>Allowed Address</th>
+                        <th>Traffic</th>
+                        <th>Expire</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <!-- Offcanvas to add user -->
+    <component type="typeof(Components.Offcanvas.Client.Add)" render-mode="Static" />
+    <!-- Offcanvas to add user -->
+    <!-- Offcanvas to edit user -->
+    <component type="typeof(Components.Offcanvas.Client.Update)" render-mode="Static" />
+    <!-- Offcanvas to edit user -->
+    <!-- Offcanvas to sync user -->
+    <component type="typeof(Components.Offcanvas.Client.Sync)" render-mode="Static" />
+    <!-- Offcanvas to sync user -->
 </div>
 
-<!-- QR Modal -->
-<component type="typeof(Modals.QRModal)" render-mode="Static" />
-<!-- Delete Modal -->
-@await Component.InvokeAsync("DeleteModal", new {
-    IsServer = false
-})
-<!-- Edit Modal -->
-@await Component.InvokeAsync("UpdateClientModal", new {
-    Servers = servers
-})
-<!-- Sync Modal -->
-@await Component.InvokeAsync("SyncUserModal")
+@section Modals {
+    <!-- QR Modal -->
+    <component type="typeof(Components.Modals.QRModal)" render-mode="Static" />
+    <!-- Remove Modal -->
+    <component type="typeof(Components.Modals.DeleteModal)" render-mode="Static" />
+    <!-- Details Modal -->
+    <component type="typeof(Components.Modals.DetailsModal)" render-mode="Static" />
+    <!-- Toasts -->
+    <component type="typeof(Components.ToastContainer)" render-mode="Static" />
+}
 
 @section Scripts {
-    <script src="js/wireguard.js"></script>
-    <script src="js/wgelements.js"></script>
-    <script>
-        document.getElementById("QRModal").addEventListener('shown.coreui.modal', (event) => {
-            let Id = event.relatedTarget.closest('tr').getAttribute('data-id');
-            const xhttp = new XMLHttpRequest();
-            xhttp.onload = function () {
-                document.querySelector('#QRModal img.img-thumbnail').setAttribute("src", "data:image/png;base64, " + this.responseText);
-            }
-            xhttp.open("GET", "/Clients/QR?id=" + Id, true);
-            xhttp.send();
-        });
-    </script>
+    <script src="js/page-users.js"></script>
 }

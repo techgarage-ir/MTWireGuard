@@ -1,50 +1,12 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MTWireGuard.Middlewares;
 using MTWireGuard.Application;
-using MTWireGuard.Mapper;
+using Microsoft.Extensions.Caching.Memory;
+using MTWireGuard.Application.MinimalAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorPages().AddRazorPagesOptions(o =>
-{
-    //o.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
-    o.Conventions.AuthorizeFolder("/");
-    o.Conventions.AllowAnonymousToPage("/Login");
-});
-
-builder.Services.AddAntiforgery(o =>
-{
-    o.HeaderName = "XSRF-TOKEN";
-    o.FormFieldName = "XSRF-Validation-Token";
-    o.Cookie.Name = "XSRF-Validation";
-});
-
-builder.Services.AddAutoMapper(typeof(RequestProfile));
-
 builder.Services.AddApplicationServices();
-
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
-{
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
-    options.SlidingExpiration = true;
-    options.LoginPath = "/Login";
-    options.AccessDeniedPath = "/Forbidden";
-    options.Cookie.Name = "Authentication";
-});
-
-builder.Services.AddAuthorization(configure =>
-{
-    configure.AddPolicy("Administrator", authBuilder =>
-        {
-            authBuilder.RequireRole("Administrator");
-        });
-});
-
-builder.Services.ConfigureApplicationCookie(configure =>
-{
-    configure.Cookie.Name = "MTWireguard";
-});
 
 var app = builder.Build();
 
@@ -57,9 +19,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Ensure Database Exists
 var serviceScope = app.Services.CreateScope().ServiceProvider;
-//serviceScope.GetService<DBContext>().Database.EnsureCreated();
+
+// Validate Prerequisite
+var validator = new SetupValidator(serviceScope);
+await validator.Validate();
 
 if (!app.Environment.IsDevelopment())
     app.UseStaticFiles();
@@ -68,13 +32,14 @@ else
     {
         OnPrepareResponse = context =>
         {
-            context.Context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
-            context.Context.Response.Headers.Add("Expires", "-1");
+            context.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store");
+            context.Context.Response.Headers.Append("Expires", "-1");
         }
     });
 
 app.UseDependencyCheck();
-//app.UseExceptionHandling();
+app.UseClientReporting();
+app.UseExceptionHandling();
 //app.UseAntiForgery();
 
 app.UseRouting();
@@ -82,6 +47,19 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseSession();
+
 app.MapRazorPages();
+
+app.
+    MapGroup("/api/").
+    MapGeneralApi();
+
+app.UseCors(options =>
+{
+    options.AllowAnyHeader();
+    options.AllowAnyMethod();
+    options.AllowAnyOrigin();
+});
 
 app.Run();

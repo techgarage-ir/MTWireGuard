@@ -1,22 +1,19 @@
-﻿using MTWireGuard.Pages;
-using MTWireGuard.Application.Repositories;
+﻿using MTWireGuard.Application.Repositories;
+using MTWireGuard.Pages;
 using Razor.Templating.Core;
-using System.Globalization;
 
 namespace MTWireGuard.Middlewares
 {
     public class DependencyCheckMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IMikrotikRepository API;
 
-        public DependencyCheckMiddleware(RequestDelegate next, IMikrotikRepository mikrotik)
+        public DependencyCheckMiddleware(RequestDelegate next)
         {
             _next = next;
-            API = mikrotik;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IMikrotikRepository API)
         {
             bool Error = false;
 
@@ -26,7 +23,7 @@ namespace MTWireGuard.Middlewares
             string? PUBLICIP = Environment.GetEnvironmentVariable("MT_PUBLIC_IP");
 
             ErrorModel errorModel = new();
-            Dictionary<string, object> ViewBag = new();
+            Dictionary<string, object> ViewBag = [];
 
             if (string.IsNullOrEmpty(IP) || string.IsNullOrEmpty(USER) || string.IsNullOrEmpty(PUBLICIP))
             {

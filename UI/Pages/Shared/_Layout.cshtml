@@ -1,207 +1,218 @@
-﻿@using MTWireGuard.Application.Repositories
-@inject IMikrotikRepository API;
-@{
-    var logs = await API.GetLogsAsync();
+﻿@{
+    string username = Environment.GetEnvironmentVariable("MT_USER");
 }
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <base href="./">
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="description" content="Mikrotik Wireguard management panel">
-    <meta name="author" content="Kazem Ma79">
+	<meta name="author" content="Kazem Ma79">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="keywords" content="Mikrotik, RouterOS, Wireguard, MTWireguard">
     <title>@ViewData["Title"]</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-36x36.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-48x48.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-72x72.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-96x96.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-144x144.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-256x256.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-384x384.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-512x512.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon/favicon-96x96.png">
-    <link rel="manifest" href="assets/favicon/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="assets/favicon/mstile-150x150.png">
-    <meta name="theme-color" content="#ffffff">
-    <!-- Simplebar styles-->
-    <link rel="stylesheet" href="vendors/simplebar/css/simplebar.css">
-    <link rel="stylesheet" href="css/vendors/simplebar.css">
-    <!-- Calendarify -->
-    <link href="vendors/calendarify/calendarify.min.css" rel="stylesheet">
-    <link href="vendors/tempus/css/tempus-dominus.min.css" rel="stylesheet">
-    <!-- Main styles-->
-    <link href="css/style.css" rel="stylesheet">
-    <link href="css/gradients.css" rel="stylesheet">
-    <link href="css/custom.css" rel="stylesheet">
-    <!-- Page Styles (if any)-->
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="assets/lib/boxicons/css/boxicons.min.css" rel="stylesheet">
+    <link href="assets/libs/fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="assets/css/core.css" rel="stylesheet">
+
+    <!-- Theme Style Switcher-->
+    <script src="assets/js/themeSwitcher.js"></script>
+
+    <!-- Libraries Stylesheet -->
+    <link href="assets/lib/owl.carousel/css/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
+    <link href="assets/libs/flatpickr/flatpickr.min.css" rel="stylesheet">
+
+    <link href="https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-1.13.7/b-2.4.2/b-html5-2.4.2/fc-4.3.0/fh-3.4.0/r-2.5.0/sp-2.2.0/sl-1.7.0/datatables.min.css" rel="stylesheet">
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
-    <div class="sidebar sidebar-dark sidebar-fixed" id="sidebar">
-        <div class="sidebar-brand d-none d-md-flex">
-            <svg class="sidebar-brand-full" width="118" height="46" alt="Wireguard Logo">
-                <image xlink:href="assets/brand/wireguard.svg" width="118" height="46" />
-            </svg>
-            <svg class="sidebar-brand-narrow" width="46" height="46" alt="Wireguard Logo">
-                <image xlink:href="assets/brand/wireguard-mini.svg" width="46" height="46"></image>
-            </svg>
+    <div class="container-fluid position-relative d-flex p-0">
+        <!-- Spinner Start -->
+        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
         </div>
-        <ul class="sidebar-nav" data-coreui="navigation" data-simplebar="">
-            <li class="nav-item">
-                <a class="nav-link" asp-page="/">
-                    <svg class="nav-icon">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-speedometer"></use>
-                    </svg> Dashboard
-                </a>
-            </li>
-            <li class="nav-title">Wireguard</li>
-            <li class="nav-item">
-                <a class="nav-link" asp-page="/Servers">
-                    <svg class="nav-icon">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-3d"></use>
-                    </svg> Servers
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" asp-page="/Clients">
-                    <svg class="nav-icon">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-devices"></use>
-                    </svg> Clients
-                </a>
-            </li>
-            <li class="nav-title">System</li>
-            <li class="nav-item">
-                <a class="nav-link" asp-page="/Settings">
-                    <svg class="nav-icon">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-apps"></use>
-                    </svg> Settings
-                </a>
-            </li>
-            <li class="nav-title mt-auto">System Utilization</li>
-            <li class="nav-item px-3 d-narrow-none" id="cpuUsage">
-                <div class="text-uppercase mb-1"><small><b>CPU Usage</b></small></div>
-                <div class="progress progress-thin">
-                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        <!-- Spinner End -->
+        <!-- Sidebar Start -->
+        <div class="sidebar pb-3">
+            <nav class="navbar navbar-light pt-0">
+                <div class="navbar-brand d-flex justify-content-center align-items-center m-0 p-3 w-100">
+                    <a href="index.html">
+                        <h3 class="text-primary">
+                            MTWireguard
+                        </h3>
+                    </a>
                 </div>
-                <small class="text-medium-emphasis-inverse">0% is using.</small>
-            </li>
-            <li class="nav-item px-3 d-narrow-none" id="ramUsage">
-                <div class="text-uppercase mb-1"><small><b>Memory Usage</b></small></div>
-                <div class="progress progress-thin">
-                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="d-flex align-items-center ms-4 my-4">
+                    <div class="position-relative">
+                        <img class="rounded-circle" src="img/user.png" alt="" style="width: 45px; height: 45px;">
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">@username</h6>
+                        <span>Admin</span>
+                    </div>
                 </div>
-                <small class="text-medium-emphasis-inverse">0/0</small>
-            </li>
-            <li class="nav-item px-3 mb-3 d-narrow-none" id="hddUsage">
-                <div class="text-uppercase mb-1"><small><b>Disk Usage</b></small></div>
-                <div class="progress progress-thin">
-                    <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-                <small class="text-medium-emphasis-inverse">0/0</small>
-            </li>
-        </ul>
-        <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
-    </div>
-    <div class="wrapper d-flex flex-column min-vh-100 bg-light">
-        <header class="header header-sticky mb-4">
-            <div class="container-fluid">
-                <button class="header-toggler px-md-0 me-md-3" type="button" onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()">
-                    <svg class="icon icon-lg">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-menu"></use>
-                    </svg>
-                </button>
-                <a class="header-brand d-md-none" href="#">
-                    <svg width="118" height="46" alt="Wireguard Logo">
-                        <use xlink:href="assets/brand/wireguard.svg"></use>
-                    </svg>
-                </a>
-                <ul class="header-nav d-none d-md-flex">
+                <ul class="navbar-nav w-100" id="sideNav">
                     <li class="nav-item">
-                        <a class="nav-link" asp-page="Index">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-page="Clients">Users</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-page="Settings">Settings</a>
-                    </li>
-                </ul>
-                <ul class="header-nav ms-auto">
-                    <li class="nav-item dropdown d-md-down-none">
-                        <a class="nav-link" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                            <span class="d-inline-block my-1 mx-2 position-relative">
-                                <svg class="icon icon-lg">
-                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-list-rich"></use>
-                                </svg>
-                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger rounded-circle">
-                                    <span class="visually-hidden">New logs</span>
-                                </span>
-                            </span>
+                        <a asp-page="Index" class="nav-link">
+                            <i class="bx bx-home-circle me-2"></i>Dashboard
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg py-0" style="max-width: 30vw; max-height: 70vh; overflow-y: auto;">
-                            <component type="typeof(Components.LogsView)" render-mode="Static" param-logs="@logs" />
-                            <a class="dropdown-item text-center border-top" asp-page="Logs"><strong>View all messages</strong></a>
-                        </div>
                     </li>
-                </ul>
-                <ul class="header-nav ms-3">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link py-0" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                            <div class="avatar avatar-md"><img class="avatar-img" src="assets/img/avatars/admin.png" alt="kazem_ma79@yahoo.com"></div>
+                    <li class="nav-item text-center text-uppercase py-2">
+                        <span>Wireguard</span>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-page="Clients" class="nav-link">
+                            <i class="bx bx-group me-2"></i>Users
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end py-0 mb-0">
-                            <div class="dropdown-header bg-light py-2">
-                                <div class="fw-semibold">Account</div>
-                            </div>
-                            <a class="dropdown-item" asp-page="Logout">
-                                <svg class="icon">
-                                    <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-account-logout"></use>
-                                </svg> Logout
-                            </a>
-                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-page="Servers" class="nav-link">
+                            <i class="bx bx-broadcast me-2"></i>Servers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-page="Pools" class="nav-link">
+                            <i class="bx bx-current-location me-2"></i>Pools
+                        </a>
+                    </li>
+                    <li class="nav-item text-center text-uppercase py-2">
+                        <span>Settings</span>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-page="Settings" class="nav-link">
+                            <i class="bx bx-cog me-2"></i>Settings
+                        </a>
                     </li>
                 </ul>
-            </div>
-            <div class="header-divider"></div>
-            <div class="container-fluid">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb my-0 ms-2">
-                        <li class="breadcrumb-item">
-                            <span>Dashboard</span>
-                        </li>
-                        <li class="breadcrumb-item active">
-                            <span>@ViewData["Breadcrumb"]</span>
-                        </li>
-                    </ol>
-                </nav>
-            </div>
-        </header>
-        <div class="body flex-grow-1 px-3">
-            <div class="m-1">
+            </nav>
+        </div>
+        <!-- Sidebar End -->
+        <!-- Content Start -->
+        <div class="content">
+            <!-- Navbar Start -->
+            <nav class="navbar navbar-expand navbar-light sticky-top px-4 py-0">
+                <a href="index.html" class="navbar-brand d-flex d-lg-none me-4">
+                    <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+                </a>
+                <a href="#" class="sidebar-toggler flex-shrink-0">
+                    <i class="fa fa-bars"></i>
+                </a>
+                <form class="col-4 d-none d-md-flex ms-4">
+                    <input class="form-control border-1 shadow-sm" type="search" placeholder="Search">
+                </form>
+                <div class="navbar-nav align-items-center ms-auto">
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bx bx-sm bx-bell"></i>
+                        </a>
+                        <ul id="logs" class="dropdown-menu dropdown-menu-end border-1 rounded-0 rounded-bottom m-0"></ul>
+                    </div>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link" data-bs-toggle="dropdown">
+                            <i class="bx bx-sm bx-palette"></i>
+                        </a>
+                        <ul class="dropdown-menu p-0">
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" data-bs-theme-value="light">
+                                    <span class="d-flex align-items-center"><i class="bx bx-sun me-2"></i>Light</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" data-bs-theme-value="dark">
+                                    <span class="d-flex align-items-center"><i class="bx bx-moon me-2"></i>Dark</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" data-bs-theme-value="auto">
+                                    <span class="d-flex align-items-center"><i class="bx bx-desktop me-2"></i>System</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img class="rounded-circle me-lg-2" src="img/user.png" alt="" style="width: 40px; height: 40px;">
+                            <span class="d-none d-lg-inline-flex">@username</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end border-1 rounded-0 rounded-bottom m-0">
+                            <a asp-page="Logout" class="dropdown-item">Log Out</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- Navbar End -->
+
+            <div class="container-fluid p-4">
                 @RenderBody()
             </div>
-        </div>
-        <footer class="footer">
-            <div><a href="https://mtwg.techgarage.ir/">Mikrotik WireGuard Dashboard</a> © 2023 Techgarage.</div>
-            <div class="ms-md-auto">Powered by <a href="https://coreui.io/">CoreUI</a></div>
-        </footer>
-    </div>
-    <component type="typeof(Components.ToastContainer)" render-mode="Static" />
-    <!-- CoreUI and necessary plugins-->
-    <script src="vendors/coreui/coreui/js/coreui.bundle.min.js"></script>
-    <script src="vendors/simplebar/js/simplebar.min.js"></script>
-    <script src="vendors/calendarify/calendarify.iife.js"></script>
-    <script src="https://unpkg.com/@@popperjs/core@@^2.0.0"></script>
-    <script src="vendors/tempus/js/tempus-dominus.min.js"></script>
-    <script src="js/script.js"></script>
 
+            <!-- Footer Start -->
+            <footer class="container-fluid px-4">
+                <div class="rounded-top p-4">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 text-center text-sm-start">
+                            2022 - 2024 &copy; <a href="#">MTWireguard</a>, All Right Reserved.
+                        </div>
+                        <div class="col-12 col-sm-6 text-center text-sm-end">
+                            Designed By <a href="https://htmlcodex.com">HTML Codex</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <!-- Footer End -->
+        </div>
+        <!-- Content End -->
+
+        @await RenderSectionAsync("Modals", required: false)
+
+        <!-- Back to Top -->
+        <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top" style="display: none;"><i class="bi bi-arrow-up"></i></a>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="js/APIClient.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script src="js/wireguard.js"></script>
+    <script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/lib/jquery/js/jquery.min.js"></script>
+    <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
+    <script src="lib/chart/chart.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="assets/lib/owl.carousel/js/owl.carousel.min.js"></script>
+    <script src="lib/tempusdominus/js/moment.min.js"></script>
+    <script src="lib/tempusdominus/js/moment-timezone.min.js"></script>
+    <script src="lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"></script>
+    <script src="assets/libs/flatpickr/flatpickr.min.js"></script>
+    <script src="https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-1.13.7/b-2.4.2/b-html5-2.4.2/fc-4.3.0/fh-3.4.0/r-2.5.0/sp-2.2.0/sl-1.7.0/datatables.min.js"></script>
+    <script>
+        $.ajaxSetup({
+            async: true
+        });
+        let here = location.pathname;
+        $(`#sideNav .nav-item .nav-link[href="${here}"]`).addClass('active');
+    </script>
+
+    <!-- Template Javascript -->
+    <script src="js/helper.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

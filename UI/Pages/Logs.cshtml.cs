@@ -6,16 +6,8 @@ namespace MTWireGuard.Pages
 {
     public class LogsModel : PageModel
     {
-        private readonly IMikrotikRepository API;
-        
-        public LogsModel(IMikrotikRepository mikrotik)
+        public void OnGet()
         {
-            API = mikrotik;
-        }
-
-        public async Task OnGetAsync()
-        {
-            ViewData["Logs"] = await API.GetLogsAsync();
         }
     }
 }

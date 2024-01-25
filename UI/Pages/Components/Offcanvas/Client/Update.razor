@@ -1,0 +1,93 @@
+﻿<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditUser" aria-labelledby="offcanvasEditUserLabel">
+    <div class="offcanvas-header">
+        <h5 id="offcanvasEditUserLabel" class="offcanvas-title">Edit User</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body mx-0 flex-grow-0 pt-0">
+        <div class="text-center shadow rounded-pill border-bottom mb-3">
+            <small class="text-truncate text-info user-select-none">Empty fields will remain unchanged.</small>
+        </div>
+        <form class="add-new-user pt-0" id="editUserForm" onsubmit="return false">
+            <input type="hidden" id="edit-id" name="ID">
+            <div class="mb-3">
+                <label class="form-label" for="edit-username">Username</label>
+                <input type="text" class="form-control" id="edit-username" name="Username" aria-label="Username" />
+            </div>
+            <div class="form-password-toggle mb-3">
+                <label class="form-label" for="edit-password">Password</label>
+                <div class="input-group input-group-merge">
+                    <input type="password" class="form-control" id="edit-password" name="Password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="edit-password-eye" />
+                    <span id="edit-password-eye" class="input-group-text password-eye"><i class="bx bx-hide"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-interface">Interface</label>
+                <select class="form-select" id="edit-interface" name="Interface"></select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-allowed-address">Allowed Address</label>
+                <div class="input-group">
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="edit-ip-dynamic" name="InheritIP" aria-label="IP from pool" checked>
+                        <label class="form-check-label" for="edit-ip-dynamic">Dynamic</label>
+                    </div>
+                    <input id="edit-allowed-address" name="AllowedAddress" type="text" class="form-control" aria-label="Allowed Address" aria-describedby="edit-ip-cidr" disabled>
+                    <span class="input-group-text" id="edit-ip-cidr">/32</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-dns-address">DNS Server</label>
+                <div class="input-group">
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="edit-dns-dynamic" name="InheritDNS" aria-label="DNS from interface" checked>
+                        <label class="form-check-label" for="edit-dns-dynamic">Inherit</label>
+                    </div>
+                    <input type="text" class="form-control" id="edit-dns-address" name="DNSAddress" aria-label="DNS Address" disabled>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-private-key">Private Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="edit-private-key" name="PrivateKey" class="form-control" aria-label="Private Key" aria-describedby="edit-keygen" />
+                    <span id="edit-keygen" class="input-group-text keygen-button"><i class="bx bx-refresh"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-public-key">Public Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="edit-public-key" name="PublicKey" class="form-control" aria-label="Public Key" aria-describedby="edit-key-reset" />
+                    <span id="edit-key-reset" class="input-group-text key-reset-button"><i class="bx bx-reset"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-preshared-key">Preshared Key</label>
+                <input type="text" id="edit-preshared-key" name="PresharedKey" class="form-control" aria-label="Public Key" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-endpoint">Endpoint</label>
+                <input type="text" id="edit-endpoint" name="Endpoint" class="form-control" aria-label="Endpoint" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-endpoint-port">Endpoint Port</label>
+                <input type="number" id="edit-endpoint-port" name="EndpointPort" class="form-control" aria-label="Endpoint Port" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-keepalive">Keepalive</label>
+                <input type="number" id="edit-keepalive" name="KeepAlive" class="form-control" aria-label="Keepalive" placeholder="seconds" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-expire">Expire</label>
+                <input type="datetime" id="edit-expire" name="Expire" class="form-control" aria-label="Expire" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-traffic">Traffic</label>
+                <div class="input-group">
+                    <input id="edit-traffic" name="Traffic" type="number" class="form-control" aria-label="Traffic" aria-describedby="edit-gigabyte">
+                    <span class="input-group-text" id="edit-gigabyte">GB</span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
+            <button type="reset" class="btn btn-danger" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>

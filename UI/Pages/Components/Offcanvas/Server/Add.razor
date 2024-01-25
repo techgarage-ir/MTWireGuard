@@ -1,0 +1,69 @@
+﻿<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddServer" aria-labelledby="offcanvasAddServerLabel">
+    <div class="offcanvas-header">
+        <h5 id="offcanvasAddServerLabel" class="offcanvas-title">Add Server</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body mx-0 flex-grow-0">
+        <form class="add-new-server pt-0" id="addServerForm" onsubmit="return false">
+            <div class="mb-3">
+                <label class="form-label" for="add-name">Name</label>
+                <input type="text" class="form-control" id="add-name" name="Name" aria-label="Name" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-ip-address">IP Address</label>
+                <div class="input-group">
+                    <input id="add-ip-address" name="IPAddress" type="text" class="form-control" aria-label="IP Address" aria-describedby="add-ip-cidr">
+                    <select id="add-ip-cidr" name="IPCidr" class="input-group-text form-select-sm">
+                        <option value="8">8</option>
+                        <option value="16">16</option>
+                        <option value="24" selected>24</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-pool">IP Pool</label>
+                <div class="input-group">
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="add-static-addressing" name="UseIPPool" aria-label="Use IP pool" checked>
+                        <label class="form-check-label" for="add-static-addressing">Static</label>
+                    </div>
+                    <select class="form-select" id="add-pool" name="IPPoolId" aria-label="IP Pool" disabled></select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-dns-server">DNS Server</label>
+                <div class="input-group">
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="add-dns-dynamic" name="InheritDNS" aria-label="DNS from interface" checked>
+                        <label class="form-check-label" for="add-dns-dynamic">Inherit</label>
+                    </div>
+                    <input type="text" class="form-control" id="add-dns-server" name="DNSAddress" aria-label="DNS Address" disabled>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-private-key">Private Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="add-private-key" name="PrivateKey" class="form-control" aria-label="Private Key" aria-describedby="add-keygen" />
+                    <span id="add-keygen" class="input-group-text keygen-button"><i class="bx bx-refresh"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-public-key">Public Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="add-public-key" name="PublicKey" class="form-control" aria-label="Public Key" aria-describedby="add-key-reset" />
+                    <span id="add-key-reset" class="input-group-text key-reset-button"><i class="bx bx-reset"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-port">Listen Port</label>
+                <input type="number" id="add-port" name="Port" class="form-control" aria-label="Listen Port" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="add-mtu">MTU</label>
+                <input type="number" id="add-mtu" name="MTU" class="form-control" aria-label="MTU" />
+            </div>
+            <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
+            <button type="reset" class="btn btn-danger" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>

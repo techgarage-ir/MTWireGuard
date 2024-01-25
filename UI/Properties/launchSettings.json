@@ -3,7 +3,6 @@
     "MTWireGuard": {
       "commandName": "Project",
       "launchBrowser": true,
-      "hotReloadEnabled": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MT_IP": "192.168.0.96",
@@ -11,8 +10,10 @@
         "MT_PASS": "",
         "MT_PUBLIC_IP": "192.168.0.96"
       },
+      "hotReloadEnabled": true,
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7220;http://localhost:5220"
+      "applicationUrl": "https://192.168.0.5:7220;http://192.168.0.5:5220",
+      "nativeDebugging": true
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -25,14 +26,14 @@
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-      "publishAllPorts": true,
-      "useSSL": true,
       "environmentVariables": {
         "MT_IP": "192.168.0.96",
         "MT_USER": "panel",
         "MT_PASS": "",
         "MT_PUBLIC_IP": "192.168.0.96"
-      }
+      },
+      "publishAllPorts": true,
+      "useSSL": true
     }
   },
   "iisSettings": {

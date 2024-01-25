@@ -6,24 +6,15 @@ using MTWireGuard.Application.Repositories;
 
 namespace MTWireGuard.Pages
 {
-    public class LogoutModel : PageModel
+    public class LogoutModel(IMikrotikRepository api) : PageModel
     {
-        private readonly IMikrotikRepository API;
-
-        public LogoutModel(IMikrotikRepository mikrotik)
-        {
-            API = mikrotik;
-        }
         public async Task<IActionResult> OnGetAsync(string returnUrl = "Login")
         {
             // Clear the existing external cookie
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
-            /*
-            var sessionId = await MTAPIHandler.GetCurrentSessionID();
-            var remove = await MTAPIHandler.KillJob(sessionId);*/
-            var sessionId = await API.GetCurrentSessionID();
-            var kill = await API.KillJob(sessionId);
+            var sessionId = await api.GetCurrentSessionID();
+            var kill = await api.KillJob(sessionId);
             return RedirectToPage(returnUrl);
         }
     }

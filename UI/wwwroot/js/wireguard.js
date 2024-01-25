@@ -1,9 +1,9 @@
-﻿/*! SPDX-License-Identifier: GPL-2.0
+/*! SPDX-License-Identifier: GPL-2.0
  *
  * Copyright (C) 2015-2020 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-(function () {
+(function() {
 	function gf(init) {
 		var r = new Float64Array(16);
 		if (init) {
@@ -156,10 +156,10 @@
 		var input = Uint8Array.from([(src[0] >> 2) & 63, ((src[0] << 4) | (src[1] >> 4)) & 63, ((src[1] << 2) | (src[2] >> 6)) & 63, src[2] & 63]);
 		for (var i = 0; i < 4; ++i)
 			dest[i] = input[i] + 65 +
-				(((25 - input[i]) >> 8) & 6) -
-				(((51 - input[i]) >> 8) & 75) -
-				(((61 - input[i]) >> 8) & 15) +
-				(((62 - input[i]) >> 8) & 3);
+			(((25 - input[i]) >> 8) & 6) -
+			(((51 - input[i]) >> 8) & 75) -
+			(((61 - input[i]) >> 8) & 15) +
+			(((62 - input[i]) >> 8) & 3);
 	}
 
 	function keyToBase64(key) {
@@ -172,17 +172,16 @@
 	}
 
 	window.wireguard = {
-		generateKeypair: function () {
+		generatePresharedKey: function() {
+			return keyToBase64(generatePresharedKey());
+		},
+		generateKeypair: function() {
 			var privateKey = generatePrivateKey();
 			var publicKey = generatePublicKey(privateKey);
 			return {
 				publicKey: keyToBase64(publicKey),
 				privateKey: keyToBase64(privateKey)
 			};
-		},
-		generatePublicKey: function (privateKey) {
-			let publicKey = generatePublicKey(privateKey);
-			return keyToBase64(publicKey);
-        }
+		}
 	};
 })();

@@ -1,75 +1,121 @@
 ﻿@page
-@using MTWireGuard.Application.Models.Mikrotik
-@model MTWireGuard.Pages.LogsModel
 @{
     ViewData["Title"] = "Event Logs";
-    ViewData["Breadcrumb"] = "Logs";
-    var Logs = (List<LogViewModel>)ViewData["Logs"];
 }
 
-<div class="row">
-    <div class="">
-        <table class="table table-bordered border-secondary logs-table">
-            <thead class="table-dark fw-semibold">
-                <tr class="align-middle">
-                    <th class="text-center">
-                        <svg class="icon">
-                            <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-people"></use>
-                        </svg>
-                    </th>
-                    <th>Message</th>
-                    <th>Topics</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var log in Logs)
-                {
-                    <tr class="align-middle">
-                        <td class="text-center">
-                            <span class="text-medium-emphasis">#@log.Id</span>
-                        </td>
-                        <td>@log.Message</td>
-                        <td>
-                            @foreach (var topic in log.Topics)
-                            {
-                                switch (topic.ToLower())
-                                {
-                                    case "system":
-                                        <span class="badge text-bg-dark mx-1">@topic</span>
-                                        break;
-                                    case "info":
-                                        <span class="badge text-bg-info mx-1">@topic</span>
-                                        break;
-                                    case "error":
-                                    case "critical":
-                                        <span class="badge text-bg-danger mx-1">@topic</span>
-                                        break;
-                                    case "account":
-                                        <span class="badge text-bg-secondary mx-1">@topic</span>
-                                        break;
-                                    case "dhcp":
-                                    case "ppp":
-                                    case "l2tp":
-                                    case "pptp":
-                                    case "sstp":
-                                        <span class="badge text-bg-light border border-secondary mx-1">@topic</span>
-                                        break;
-                                    default:
-                                        <span class="badge text-bg-light border border-secondary mx-1">@topic</span>
-                                        break;
-                                }
-                            }
-                        </td>
-                        <td>@log.Time</td>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Total Logs</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="logs-total">1,000</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-success">
+                            <i class="bi bi-calendar-event bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Critical Logs</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="logs-critical">69</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-danger">
+                            <i class="bi bi-x-octagon bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Wireguard Logs</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="logs-wireguard">731</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-warning">
+                            <i class="bi bi-exclamation-triangle bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Info Logs</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="logs-info">200</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-info">
+                            <i class="bi bi-exclamation-octagon bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Logs List Table -->
+<div class="card">
+    <div class="card-header border-bottom">
+        <h5 class="card-title">Event Logs</h5>
+    </div>
+    <div class="card-body">
+        <div class="card-datatable table-responsive pt-0">
+            <table class="datatables-basic table table-striped table-hover border-top">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>
+                            <i class="bx bx-hash"></i>
+                        </th>
+                        <th>Message</th>
+                        <th>Topics</th>
+                        <th>Time</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th></th>
+                        <th>
+                            <i class="bx bx-hash"></i>
+                        </th>
+                        <th>Message</th>
+                        <th>Topics</th>
+                        <th>Time</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-    </script>
+    <script src="js/page-logs.js"></script>
 }

@@ -1,0 +1,38 @@
+﻿<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasSyncUser" aria-labelledby="offcanvasSyncUserLabel">
+    <div class="offcanvas-header">
+        <h5 id="offcanvasSyncUserLabel" class="offcanvas-title">Sync User</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body mx-0 flex-grow-0">
+        <form class="add-new-user pt-0" id="syncUserForm" onsubmit="return false">
+            <input type="hidden" id="sync-id" name="ID">
+            <div class="mb-3">
+                <label class="form-label" for="sync-username">Username</label>
+                <input type="text" class="form-control" id="sync-username" name="Username" aria-label="Username" />
+            </div>
+            <div class="form-password-toggle mb-3">
+                <label class="form-label" for="sync-password">Password</label>
+                <div class="input-group input-group-merge">
+                    <input type="password" class="form-control" id="sync-password" name="Password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="sync-password-eye" />
+                    <span id="sync-password-eye" class="input-group-text password-eye"><i class="bx bx-hide"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="sync-private-key">Private Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="sync-private-key" name="PrivateKey" class="form-control" aria-label="Private Key" aria-describedby="sync-keygen" />
+                    <span id="sync-keygen" class="input-group-text keygen-button"><i class="bx bx-refresh"></i></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="sync-public-key">Public Key</label>
+                <div class="input-group input-group-merge">
+                    <input type="text" id="sync-public-key" name="PublicKey" class="form-control" aria-label="Public Key" aria-describedby="sync-key-reset" />
+                    <span id="sync-key-reset" class="input-group-text key-reset-button"><i class="bx bx-reset"></i></span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary me-sm-3 me-1 data-submit">Submit</button>
+            <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+        </form>
+    </div>
+</div>

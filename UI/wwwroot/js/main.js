@@ -1,281 +1,111 @@
-/* global Chart, coreui */
+const api = new APIClient();
 
-/**
- * --------------------------------------------------------------------------
- * CoreUI Boostrap Admin Template (v4.2.2): main.js
- * Licensed under MIT (https://coreui.io/license)
- * --------------------------------------------------------------------------
- */
-
-// Disable the on-canvas tooltip
-Chart.defaults.pointHitDetectionRadius = 1;
-Chart.defaults.plugins.tooltip.enabled = false;
-Chart.defaults.plugins.tooltip.mode = 'index';
-Chart.defaults.plugins.tooltip.position = 'nearest';
-Chart.defaults.plugins.tooltip.external = coreui.ChartJS.customTooltips;
-Chart.defaults.defaultFontColor = '#646470';
-const random = (min, max) =>
-// eslint-disable-next-line no-mixed-operators
-Math.floor(Math.random() * (max - min + 1) + min);
-
-// eslint-disable-next-line no-unused-vars
-const cardChart1 = new Chart(document.getElementById('card-chart1'), {
-  type: 'line',
-  data: {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: 'transparent',
-      borderColor: 'rgba(255,255,255,.55)',
-      pointBackgroundColor: coreui.Utils.getStyle('--cui-primary'),
-      data: [65, 59, 84, 84, 51, 55, 40]
-    }]
-  },
-  options: {
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        grid: {
-          display: false,
-          drawBorder: false
-        },
-        ticks: {
-          display: false
+// Spinner
+var spinner = function () {
+    setTimeout(function () {
+        if ($('#spinner').length > 0) {
+            $('#spinner').removeClass('show');
         }
-      },
-      y: {
-        min: 30,
-        max: 89,
-        display: false,
-        grid: {
-          display: false
-        },
-        ticks: {
-          display: false
-        }
-      }
-    },
-    elements: {
-      line: {
-        borderWidth: 1,
-        tension: 0.4
-      },
-      point: {
-        radius: 4,
-        hitRadius: 10,
-        hoverRadius: 4
-      }
+    }, 1);
+};
+spinner();
+
+// Back to top button
+$(window).on('scroll', function () {
+    if ($(this).scrollTop() > 300) {
+        $('.back-to-top').fadeIn('slow', function() {});
+    } else {
+        $('.back-to-top').fadeOut('slow', function() {});
     }
+});
+$('.back-to-top').on('click', function () {
+    $("html, body").stop().animate({scrollTop:0}, 'fast', 'swing', function() {});
+    return false;
+});
+
+// Sidebar Toggler
+$('.sidebar-toggler').on('click', function () {
+    $('.sidebar, .content').toggleClass("open");
+    return false;
+});
+
+// Password Visibility
+$('.password-eye').on('click', function () {
+    let icon = $(this).find('i');
+    let input = $(this).closest('.form-password-toggle').find('input');
+    
+    input.attr('type', input.attr('type') === 'password' ? 'text' : 'password');
+    icon.toggleClass('bx-hide bx-show-alt');
+});
+
+// Wireguard keygen
+$('.keygen-button').on('click', e => {
+  let dom = $(e.target);
+  let keys = wireguard.generateKeypair();
+  let privateKey = keys.privateKey;
+  let publicKey = keys.publicKey;
+  if (dom) {
+    let frm = dom.closest('form');
+    frm.find('input[name="PrivateKey"]').val(privateKey);
+    frm.find('input[name="PublicKey"]').val(publicKey);
+  }
+});
+$('.key-reset-button').on('click', e => {
+  let dom = $(e.target);
+  if (dom) {
+    let frm = dom.closest('form');
+    frm.find('input[name="PrivateKey"]').val('');
+    frm.find('input[name="PublicKey"]').val('');
   }
 });
 
-// eslint-disable-next-line no-unused-vars
-const cardChart2 = new Chart(document.getElementById('card-chart2'), {
-  type: 'line',
-  data: {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: 'transparent',
-      borderColor: 'rgba(255,255,255,.55)',
-      pointBackgroundColor: coreui.Utils.getStyle('--cui-info'),
-      data: [1, 18, 9, 17, 34, 22, 11]
-    }]
-  },
-  options: {
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        grid: {
-          display: false,
-          drawBorder: false
-        },
-        ticks: {
-          display: false
-        }
-      },
-      y: {
-        min: -9,
-        max: 39,
-        display: false,
-        grid: {
-          display: false
-        },
-        ticks: {
-          display: false
-        }
-      }
-    },
-    elements: {
-      line: {
-        borderWidth: 1
-      },
-      point: {
-        radius: 4,
-        hitRadius: 10,
-        hoverRadius: 4
-      }
-    }
-  }
+// Logs
+api.config.logs.getAll().then(logs => {
+    logs.sort((a, b) => a.id - b.id).slice(-5).forEach(log => {
+        let topics = ``;
+        log.topics.forEach(topic => {
+            switch (topic.toLowerCase()) {
+              case 'system':
+                topics += `<span class="badge bg-dark border me-1">${topic}</span>`;
+                break;
+              case 'info':
+                topics += `<span class="badge bg-info border me-1">${topic}</span>`;
+                break;
+              case 'error':
+              case 'critical':
+                topics += `<span class="badge bg-danger border me-1">${topic}</span>`;
+                break;
+              case 'account':
+                topics += `<span class="badge bg-secondary border me-1">${topic}</span>`;
+                break;
+              case 'dhcp':
+              case 'ppp':
+              case 'l2tp':
+              case 'pptp':
+              case 'sstp':
+              default:
+                topics += `<span class="badge bg-light border me-1">${topic}</span>`;
+                break;
+            }
+        });
+        let el = `
+        <li class="dropdown-item">
+            <div class="d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-medium-emphasis">#${log.id}</small>
+                    <div>
+                        ${topics}
+                    </div>
+                </div>
+                <div class="d-flex font-weight-bold text-medium-emphasis mt-1">
+                    <span class="text-truncate">${log.message}</span>
+                </div>
+                <div class="d-flex text-truncate small">
+                    <small class="text-medium-emphasis mt-1">${log.time}</small>
+                </div>
+            </div>
+        </li><hr class="dropdown-divider">`;
+        $('#logs').append(el);
+    });
+    $('#logs').append('<a href="/Logs" class="dropdown-item text-center">See all logs</a>');
 });
-
-// eslint-disable-next-line no-unused-vars
-const cardChart3 = new Chart(document.getElementById('card-chart3'), {
-  type: 'line',
-  data: {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: 'rgba(255,255,255,.2)',
-      borderColor: 'rgba(255,255,255,.55)',
-      data: [78, 81, 80, 45, 34, 12, 40],
-      fill: true
-    }]
-  },
-  options: {
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    elements: {
-      line: {
-        borderWidth: 2,
-        tension: 0.4
-      },
-      point: {
-        radius: 0,
-        hitRadius: 10,
-        hoverRadius: 4
-      }
-    }
-  }
-});
-
-// eslint-disable-next-line no-unused-vars
-const cardChart4 = new Chart(document.getElementById('card-chart4'), {
-  type: 'bar',
-  data: {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April'],
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: 'rgba(255,255,255,.2)',
-      borderColor: 'rgba(255,255,255,.55)',
-      data: [78, 81, 80, 45, 34, 12, 40, 85, 65, 23, 12, 98, 34, 84, 67, 82],
-      barPercentage: 0.6
-    }]
-  },
-  options: {
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-          drawTicks: false
-        },
-        ticks: {
-          display: false
-        }
-      },
-      y: {
-        grid: {
-          display: false,
-          drawBorder: false,
-          drawTicks: false
-        },
-        ticks: {
-          display: false
-        }
-      }
-    }
-  }
-});
-
-// eslint-disable-next-line no-unused-vars
-const mainChart = new Chart(document.getElementById('main-chart'), {
-  type: 'line',
-  data: {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-    datasets: [{
-      label: 'My First dataset',
-      backgroundColor: coreui.Utils.hexToRgba(coreui.Utils.getStyle('--cui-info'), 10),
-      borderColor: coreui.Utils.getStyle('--cui-info'),
-      pointHoverBackgroundColor: '#fff',
-      borderWidth: 2,
-      data: [random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200)],
-      fill: true
-    }, {
-      label: 'My Second dataset',
-      borderColor: coreui.Utils.getStyle('--cui-success'),
-      pointHoverBackgroundColor: '#fff',
-      borderWidth: 2,
-      data: [random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200), random(50, 200)]
-    }, {
-      label: 'My Third dataset',
-      borderColor: coreui.Utils.getStyle('--cui-danger'),
-      pointHoverBackgroundColor: '#fff',
-      borderWidth: 1,
-      borderDash: [8, 5],
-      data: [65, 65, 65, 65, 65, 65, 65]
-    }]
-  },
-  options: {
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          drawOnChartArea: false
-        }
-      },
-      y: {
-        ticks: {
-          beginAtZero: true,
-          maxTicksLimit: 5,
-          stepSize: Math.ceil(250 / 5),
-          max: 250
-        }
-      }
-    },
-    elements: {
-      line: {
-        tension: 0.4
-      },
-      point: {
-        radius: 0,
-        hitRadius: 10,
-        hoverRadius: 4,
-        hoverBorderWidth: 3
-      }
-    }
-  }
-});
-//# sourceMappingURL=main.js.map

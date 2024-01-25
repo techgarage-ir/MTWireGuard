@@ -1,49 +1,128 @@
-﻿@page "{handler?}"
+﻿@page
 @using MTWireGuard.Application.Models.Mikrotik
 @model MTWireGuard.Pages.ServersModel
 @{
     ViewData["Title"] = "Servers";
-    ViewData["Breadcrumb"] = "Interfaces";
 }
 
-<div class="table-responsive">
-    <table class="table border mb-0">
-        <thead class="table-light fw-semibold">
-            <tr class="align-middle">
-                <th class="text-center">
-                    <svg class="icon">
-                        <use xlink:href="vendors/coreui/icons/svg/free.svg#cil-people"></use>
-                    </svg>
-                </th>
-                <th>Name</th>
-                <th>Listen Port</th>
-                <th>MTU</th>
-                <th>Public-Key</th>
-                <th>Traffic</th>
-                <th>Status</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-</div>
-
-<div class="row mt-2">
-    <div class="col-12">
-        @await Component.InvokeAsync("CreateServerForm")
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Total Servers</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-total">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-primary">
+                            <i class="bx bx-radar bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Active Servers</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-active">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-warning">
+                            <i class="bx bx-broadcast bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Running Servers</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-running">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-success">
+                            <i class="bx bx-station bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="content-left">
+                        <span>Not Running</span>
+                        <div class="d-flex align-items-end mt-2">
+                            <h4 class="mb-0 me-2" id="servers-not-running">0</h4>
+                        </div>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-danger">
+                            <i class="bx bx-user-voice bx-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<!-- Servers List Table -->
+<div class="card">
+    <div class="card-header border-bottom">
+        <h5 class="card-title">WG Servers</h5>
+    </div>
+    <div class="card-body">
+        <div class="card-datatable table-responsive pt-0">
+            <table class="datatables-basic table table-striped table-hover border-top">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Name</th>
+                        <th>IP Address</th>
+                        <th>Port</th>
+                        <th>DHCP</th>
+                        <th>DNS</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <!-- Offcanvas to add server -->
+    <component type="typeof(Components.Offcanvas.Server.Add)" render-mode="Static" />
+    <!-- Offcanvas to add server -->
+    <!-- Offcanvas to edit server -->
+    <component type="typeof(Components.Offcanvas.Server.Update)" render-mode="Static" />
+    <!-- Offcanvas to edit server -->
+</div>
 
-<!-- Delete Modal -->
-@await Component.InvokeAsync("DeleteModal", new {
-    IsServer = true
-})
-
-<!-- Edit Modal -->
-@await Component.InvokeAsync("UpdateServerModal")
+@section Modals {
+    <!-- Remove Modal -->
+    <component type="typeof(Components.Modals.DeleteModal)" render-mode="Static" />
+    <!-- Details Modal -->
+    <component type="typeof(Components.Modals.DetailsModal)" render-mode="Static" />
+    <!-- Toasts -->
+    <component type="typeof(Components.ToastContainer)" render-mode="Static" />
+}
 
 @section Scripts {
-    <script src="js/wireguard.js"></script>
-    <script src="js/wgelements.js"></script>
+    <script src="js/page-servers.js"></script>
 }

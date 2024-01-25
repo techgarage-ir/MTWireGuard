@@ -1,0 +1,21 @@
+﻿<div class="modal fade" id="RemoveModal" tabindex="-1" aria-labelledby="RemoveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="removeForm" onsubmit="return false">
+            <div class="modal-header">
+                <h5 class="modal-title" id="RemoveModalLabel">Are you sure ?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure to delete this item ?<br />
+                    This can't be undone!
+                </p>
+                <input type="hidden" name="ID">
+            </div>
+            <div class="modal-footer">
+                <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>

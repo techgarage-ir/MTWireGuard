@@ -3,6 +3,7 @@ using System;
 using MTWireGuard.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTWireGuard.Application.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20231224201158_AddServersTable")]
+    partial class AddServersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -127,13 +130,10 @@ namespace MTWireGuard.Application.Migrations
                     b.Property<string>("DNSAddress")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("IPPoolId")
+                    b.Property<int>("IPPoolId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("InheritDNS")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseIPPool")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

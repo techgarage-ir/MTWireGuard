@@ -3,6 +3,7 @@ using System;
 using MTWireGuard.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTWireGuard.Application.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20230906130735_AddDataUsage")]
+    partial class AddDataUsage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -29,9 +32,6 @@ namespace MTWireGuard.Application.Migrations
                     b.Property<int>("RX")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ResetNotes")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("TX")
                         .HasColumnType("INTEGER");
 
@@ -46,45 +46,16 @@ namespace MTWireGuard.Application.Migrations
                     b.ToTable("DataUsages");
                 });
 
-            modelBuilder.Entity("MTWireGuard.Application.Models.LastKnownTraffic", b =>
-                {
-                    b.Property<int>("UserID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("RX")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TX")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("UserID");
-
-                    b.ToTable("LastKnownTraffic");
-                });
-
             modelBuilder.Entity("MTWireGuard.Application.Models.Mikrotik.WGPeerDBModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("DNSAddress")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("Expire")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ExpireID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("InheritDNS")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("InheritIP")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
@@ -104,9 +75,6 @@ namespace MTWireGuard.Application.Migrations
                     b.Property<int>("TX")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TrafficLimit")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PrivateKey")
@@ -116,29 +84,6 @@ namespace MTWireGuard.Application.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("MTWireGuard.Application.Models.Mikrotik.WGServerDBModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("DNSAddress")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("IPPoolId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("InheritDNS")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseIPPool")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Servers");
                 });
 #pragma warning restore 612, 618
         }

@@ -43,6 +43,33 @@ namespace MikrotikAPI
             return json.ToModel<List<ServerTraffic>>();
         }
 
+        public async Task<string> GetIPAddresses()
+        {
+            var json = await SendGetRequestAsync(Endpoints.IPAddress);
+            return json;
+        }
+
+        public async Task<CreationStatus> CreateIPAddress(IPAddressCreateModel ipAddress)
+        {
+            return await CreateItem<IPAddress>(Endpoints.IPAddress, ipAddress);
+        }
+
+        public async Task<CreationStatus> UpdateIPAddress(IPAddressUpdateModel ipAddress)
+        {
+            var itemJson = JObject.FromObject(ipAddress, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            });
+            return await UpdateItem(Endpoints.IPAddress, itemJson, ipAddress.Id);
+        }
+
+        public async Task<List<IPAddress>> GetServerIPAddress(string Interface)
+        {
+            var json = await SendGetRequestAsync(Endpoints.IPAddress + "?interface=" + Interface);
+            return json.ToModel<List<IPAddress>>();
+        }
+
         public async Task<List<WGPeer>> GetUsersAsync()
         {
             string json = await SendGetRequestAsync(Endpoints.WireguardPeers);
@@ -55,6 +82,12 @@ namespace MikrotikAPI
             return users.Find(u => u.Id == id);
         }
 
+        public async Task<WGPeerLastHandshake> GetUserHandshake(string id)
+        {
+            var json = await SendRequestBase(RequestMethod.GET, Endpoints.WireguardPeers + $"/{id}?.proplist=last-handshake");
+            return json.ToModel<WGPeerLastHandshake>();
+        }
+
         public async Task<MTInfo> GetInfo()
         {
             var json = await SendGetRequestAsync(Endpoints.SystemResource);
@@ -65,6 +98,21 @@ namespace MikrotikAPI
         {
             var json = await SendGetRequestAsync(Endpoints.SystemIdentity);
             return json.ToModel<MTIdentity>();
+        }
+
+        public async Task<CreationStatus> SetName(MTIdentityUpdateModel identity) // Create Model
+        {
+            var itemJson = JObject.FromObject(identity, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            }).ToString();
+            var json = await SendPostRequestAsync(Endpoints.SystemIdentity + "/set", itemJson);
+            return json == "[]" ? new()
+            {
+                Success = true,
+                Item = await GetName()
+            } : json.ToModel<CreationStatus>();
         }
 
         public async Task<LoginStatus> TryConnectAsync()
@@ -85,6 +133,27 @@ namespace MikrotikAPI
             return json.ToModel<List<Job>>();
         }
 
+        public async Task<DNS> GetDNS()
+        {
+            var json = await SendGetRequestAsync(Endpoints.DNS);
+            return json.ToModel<DNS>();
+        }
+
+        public async Task<CreationStatus> SetDNS(MTDNSUpdateModel dns) // Create Model
+        {
+            var itemJson = JObject.FromObject(dns, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            }).ToString();
+            var json = await SendPostRequestAsync(Endpoints.DNS + "/set", itemJson);
+            return json == "[]" ? new()
+            {
+                Success = true,
+                Item = await GetDNS()
+            } : json.ToModel<CreationStatus>();
+        }
+
         public async Task<string> KillJob(string JobID)
         {
             return await SendDeleteRequestAsync($"{Endpoints.Jobs}/" + JobID);
@@ -92,271 +161,52 @@ namespace MikrotikAPI
 
         public async Task<CreationStatus> CreateServer(WGServerCreateModel server)
         {
-            var json = await SendPutRequestAsync(Endpoints.Wireguard, server);
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success
-            };
+            return await CreateItem<WGServer>(Endpoints.Wireguard, server);
         }
 
         public async Task<CreationStatus> CreateUser(WGPeerCreateModel user)
         {
-            var jsonData = JObject.Parse(JsonConvert.SerializeObject(user, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            }));
-
-            var json = await SendPutRequestAsync(Endpoints.WireguardPeers, jsonData);
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            WGPeer peer = null;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-                peer = JsonConvert.DeserializeObject<WGPeer>(json);
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success,
-                Item = peer ?? null
-            };
+            return await CreateItem<WGPeer>(Endpoints.WireguardPeers, user);
         }
 
         public async Task<CreationStatus> UpdateServer(WGServerUpdateModel server)
         {
-            var serverJson = JObject.Parse(JsonConvert.SerializeObject(server, new JsonSerializerSettings
+            var itemJson = JObject.FromObject(server, new JsonSerializer
             {
                 NullValueHandling = NullValueHandling.Ignore,
                 DefaultValueHandling = DefaultValueHandling.Ignore
-            }));
-            var json = await SendPatchRequestAsync($"{Endpoints.Wireguard}/{server.Id}", serverJson);
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            WGServer srv = null;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-                srv = JsonConvert.DeserializeObject<WGServer>(json);
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success,
-                Item = srv ?? null
-            };
+            });
+            return await UpdateItem(Endpoints.Wireguard, itemJson, server.Id);
         }
 
         public async Task<CreationStatus> UpdateUser(WGPeerUpdateModel user)
         {
-            var userJson = JObject.Parse(JsonConvert.SerializeObject(user, new JsonSerializerSettings
+            var itemJson = JObject.FromObject(user, new JsonSerializer
             {
                 NullValueHandling = NullValueHandling.Ignore,
                 DefaultValueHandling = DefaultValueHandling.Ignore
-            }));
-            var json = await SendPatchRequestAsync($"{Endpoints.WireguardPeers}/{user.Id}", userJson);
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            WGPeer peer = null;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-                peer = JsonConvert.DeserializeObject<WGPeer>(json);
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success,
-                Item = peer ?? null
-            };
+            });
+            return await UpdateItem(Endpoints.WireguardPeers, itemJson, user.Id);
         }
 
         public async Task<CreationStatus> SetServerEnabled(WGEnability enability)
         {
-            var json = await SendPatchRequestAsync($"{Endpoints.Wireguard}/{enability.ID}", new { disabled = enability.Disabled });
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            WGPeer peer = null;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-                peer = JsonConvert.DeserializeObject<WGPeer>(json);
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success,
-                Item = peer ?? null
-            };
+            return await UpdateItem(Endpoints.Wireguard, new { disabled = enability.Disabled }, enability.ID);
         }
 
         public async Task<CreationStatus> SetUserEnabled(WGEnability enability)
         {
-            var json = await SendPatchRequestAsync($"{Endpoints.WireguardPeers}/{enability.ID}", new { disabled = enability.Disabled });
-            var obj = JObject.Parse(json);
-            bool success = false;
-            string code = string.Empty, message = string.Empty, detail = string.Empty;
-            WGPeer peer = null;
-            if (obj.TryGetValue(".id", out var Id))
-            {
-                success = true;
-                peer = JsonConvert.DeserializeObject<WGPeer>(json);
-            }
-            else if (obj.TryGetValue("error", out var Error))
-            {
-                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
-                success = false;
-                code = Error.Value<string>();
-                message = error.Message;
-                detail = error.Detail;
-            }
-            else
-            {
-                success = false;
-                message = "Failed";
-                detail = json;
-            };
-            return new()
-            {
-                Code = code,
-                Message = message,
-                Detail = detail,
-                Success = success,
-                Item = peer ?? null
-            };
+            return await UpdateItem(Endpoints.WireguardPeers, new { disabled = enability.Disabled }, enability.ID);
         }
 
         public async Task<CreationStatus> DeleteServer(string id)
         {
-            var json = await SendDeleteRequestAsync($"{Endpoints.Wireguard}/" + id);
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return new()
-                {
-                    Success = true
-                };
-            }
-            else
-            {
-                return new()
-                {
-                    Success = false,
-                    Item = json
-                };
-            }
+            return await DeleteItem(Endpoints.Wireguard, id);
         }
 
         public async Task<CreationStatus> DeleteUser(string id)
         {
-            var json = await SendDeleteRequestAsync($"{Endpoints.WireguardPeers}/" + id);
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return new()
-                {
-                    Success = true
-                };
-            }
-            else
-            {
-                return new()
-                {
-                    Success = false,
-                    Item = json
-                };
-            }
+            return await DeleteItem(Endpoints.WireguardPeers, id);
         }
 
         public async Task<string> GetTrafficSpeed()
@@ -364,7 +214,167 @@ namespace MikrotikAPI
             return await SendPostRequestAsync(Endpoints.MonitorTraffic, "{\"interface\":\"ether1\",\"duration\":\"3s\"}");
         }
 
-        private async Task<string> SendRequestBase(RequestMethod Method, string Endpoint, object Data = null, bool IsTest = false)
+        public async Task<List<Script>> GetScripts()
+        {
+            var json = await SendGetRequestAsync(Endpoints.Scripts);
+            return json.ToModel<List<Script>>();
+        }
+
+        public async Task<CreationStatus> CreateScript(ScriptCreateModel script)
+        {
+            return await CreateItem<Script>(Endpoints.Scripts, script);
+        }
+
+        public async Task<CreationStatus> DeleteScript(string id)
+        {
+            return await DeleteItem(Endpoints.Scripts, id);
+        }
+
+        public async Task<CreationStatus> UpdateScript(ScriptUpdateModel script)
+        {
+            return await UpdateItem(Endpoints.Scripts, script, script.Id);
+        }
+
+        public async Task<string> RunScript(string name)
+        {
+            return await SendPostRequestAsync(Endpoints.Execute, "{\"script\":\"" + name + "\"}");
+        }
+
+        public async Task<List<Scheduler>> GetSchedulers()
+        {
+            var json = await SendGetRequestAsync(Endpoints.Scheduler);
+            return json.ToModel<List<Scheduler>>();
+        }
+
+        public async Task<CreationStatus> CreateScheduler(SchedulerCreateModel scheduler)
+        {
+            return await CreateItem<Scheduler>(Endpoints.Scheduler, scheduler);
+        }
+
+        public async Task<List<IPPool>> GetIPPools()
+        {
+            var json = await SendGetRequestAsync(Endpoints.IPPool);
+            return json.ToModel<List<IPPool>>();
+        }
+
+        public async Task<CreationStatus> CreateIPPool(IPPoolCreateModel ipPool)
+        {
+            return await CreateItem<IPPool>(Endpoints.IPPool, ipPool);
+        }
+
+        public async Task<CreationStatus> UpdateIPPool(IPPoolUpdateModel ipPool)
+        {
+            var itemJson = JObject.FromObject(ipPool, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            });
+            return await UpdateItem(Endpoints.IPPool, itemJson, ipPool.Id);
+        }
+
+        public async Task<CreationStatus> DeleteIPPool(string id)
+        {
+            return await DeleteItem(Endpoints.IPPool, id);
+        }
+
+        private async Task<CreationStatus> CreateItem<T>(string Endpoint, object ItemCreateModel)
+        {
+            var jsonData = JObject.Parse(JsonConvert.SerializeObject(ItemCreateModel, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            }));
+            var json = await SendPutRequestAsync(Endpoint, jsonData);
+            var obj = JObject.Parse(json);
+            bool success = false;
+            string code = string.Empty, message = string.Empty, detail = string.Empty;
+            T item = default;
+            if (obj.TryGetValue(".id", out var Id))
+            {
+                success = true;
+                item = JsonConvert.DeserializeObject<T>(json);
+            }
+            else if (obj.TryGetValue("error", out var Error))
+            {
+                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
+                success = false;
+                code = Error.Value<string>();
+                message = error.Message;
+                detail = error.Detail;
+            }
+            else
+            {
+                success = false;
+                message = "Failed";
+                detail = json;
+            };
+            return new()
+            {
+                Code = code,
+                Message = message,
+                Detail = detail,
+                Success = success,
+                Item = item ?? default
+            };
+        }
+
+        private async Task<CreationStatus> DeleteItem(string Endpoint, string ItemID)
+        {
+            var json = await SendDeleteRequestAsync($"{Endpoint}/{ItemID}");
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return new()
+                {
+                    Success = true
+                };
+            }
+            else
+            {
+                return new()
+                {
+                    Success = false,
+                    Item = json
+                };
+            }
+        }
+
+        private async Task<CreationStatus> UpdateItem<T>(string Endpoint, T item, string itemId)
+        {
+            var json = await SendPatchRequestAsync($"{Endpoint}/{itemId}", item);
+            var obj = JObject.Parse(json);
+            bool success = false;
+            string code = string.Empty, message = string.Empty, detail = string.Empty;
+            T itemType = default;
+            if (obj.TryGetValue(".id", out var Id))
+            {
+                success = true;
+                itemType = JsonConvert.DeserializeObject<T>(json);
+            }
+            else if (obj.TryGetValue("error", out var Error))
+            {
+                var error = JsonConvert.DeserializeObject<CreationStatus>(json);
+                success = false;
+                code = Error.Value<string>();
+                message = error.Message;
+                detail = error.Detail;
+            }
+            else
+            {
+                success = false;
+                message = "Failed";
+                detail = json;
+            };
+            return new()
+            {
+                Code = code,
+                Message = message,
+                Detail = detail,
+                Success = success,
+                Item = itemType
+            };
+        }
+
+        private async Task<string> SendRequestBase(RequestMethod Method, string Endpoint, object? Data = null, bool IsTest = false)
         {
             HttpClientHandler handler = new()
             {

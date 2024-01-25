@@ -11,6 +11,12 @@
         public const string ActiveUsers = "user/active";
         public const string Jobs = "system/script/job";
         public const string MonitorTraffic = "interface/monitor-traffic";
+        public const string Scripts = "system/script";
+        public const string Scheduler = "system/scheduler";
+        public const string Execute = "execute";
+        public const string DNS = "ip/dns";
+        public const string IPPool = "ip/pool";
+        public const string IPAddress = "ip/address";
         public static string Empty => string.Empty;
     }
 

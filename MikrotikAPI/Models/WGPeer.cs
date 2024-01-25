@@ -34,6 +34,14 @@ namespace MikrotikAPI.Models
         public string TX { get; set; }
     }
 
+    public class WGPeerLastHandshake
+    {
+        [JsonProperty(".id")]
+        public string Id { get; set; }
+        [JsonProperty("last-handshake")]
+        public string? LastHandshake { get; set; }
+    }
+
     public class WGPeerCreateModel
     {
         [JsonProperty("allowed-address")]

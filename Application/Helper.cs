@@ -33,11 +33,6 @@ namespace MTWireGuard.Application
             return $"/tool fetch mode=http url=\"{apiURL}\" http-method=post check-certificate=no http-data=([/interface/wireguard/peers/print show-ids proplist=rx,tx as-value]);";
         }
 
-        public static string PeersLastHandshakeScript(string apiURL)
-        {
-            return $"/tool fetch mode=http url=\"{apiURL}\" http-method=post check-certificate=no http-data=([/interface/wireguard/peers/print show-ids proplist=last-handshake as-value]);";
-        }
-
         public static int ParseEntityID(string entityID)
         {
             return Convert.ToInt32(entityID[1..], 16);

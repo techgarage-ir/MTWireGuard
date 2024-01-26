@@ -57,7 +57,6 @@ namespace MTWireGuard.Application
             var scripts = await api.GetScripts();
             var schedulers = await api.GetSchedulers();
             var trafficScript = scripts.Find(x => x.Name == "SendTrafficUsage");
-            var handshakeScript = scripts.Find(x => x.Name == "SendActivityUpdates");
             var trafficScheduler = schedulers.Find(x => x.Name == "TrafficUsage");
 
             if (trafficScript == null)
@@ -68,17 +67,6 @@ namespace MTWireGuard.Application
                     Policies = ["write", "read", "test"],
                     DontRequiredPermissions = false,
                     Source = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage")
-                });
-                var result = create.Code;
-            }
-            if (handshakeScript == null)
-            {
-                var create = await api.CreateScript(new()
-                {
-                    Name = "SendActivityUpdates",
-                    Policies = ["write", "read", "test"],
-                    DontRequiredPermissions = false,
-                    Source = Helper.PeersLastHandshakeScript($"http://{ip}/api/activity")
                 });
                 var result = create.Code;
             }

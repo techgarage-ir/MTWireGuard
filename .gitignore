@@ -367,3 +367,6 @@ FodyWeavers.xsd
 *.tar
 .editorconfig
 /replaceStringInBranch.sh
+
+# Github
+Photos/

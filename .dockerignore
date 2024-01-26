@@ -2,7 +2,9 @@
 **/.dockerignore
 **/.env
 **/.git
+**/.github
 **/.gitignore
+**/.gitattributes
 **/.project
 **/.settings
 **/.toolstarget
@@ -23,5 +25,7 @@
 **/secrets.dev.yaml
 **/values.dev.yaml
 **/*.pdb
+**/Photos
 LICENSE
 README.md
+replaceStringInBranch.sh

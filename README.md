@@ -1,6 +1,18 @@
-﻿# MTWireGuard - Mikrotik Wireguard Panel
-[Installation Instruction](https://mtwireguard.techgarage.ir/)
+﻿<p align="center">
+  <picture>
+    <img alt="MTWireguard logo" width="400" src="/Photos/logo.png">
+  </picture>
+</p>
+<p align="center">
+ <strong>A powerful GUI to manage your Wireguard.</strong>
+</p>
 
+
+# MTWireGuard - Mikrotik Wireguard Panel
+[Installation Instruction](https://mtwireguard.techgarage.ir/)
+<p>
+<img alt="Screenshot" src="/Photos/screenshot.png">
+</p>
 ## Features added in new version
 1. Project redesigned to 3-Layer structure
 2. Peer expiration time

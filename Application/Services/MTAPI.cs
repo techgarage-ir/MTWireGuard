@@ -301,7 +301,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> UpdateUser(UserUpdateModel user)
         {
-            var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user.);
+            var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user);
             var mtUpdate = await wrapper.UpdateUser(mtPeer);
             if (mtUpdate.Success)
             {

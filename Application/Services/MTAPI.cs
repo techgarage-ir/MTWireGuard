@@ -231,6 +231,13 @@ namespace MTWireGuard.Application.Services
                     InheritDNS = inheritDNS,
                     InheritIP = peer.InheritIP
                 });
+                await dbContext.LastKnownTraffic.AddAsync(new()
+                {
+                    UserID = userID,
+                    RX = 0,
+                    TX = 0,
+                    CreationTime = DateTime.Now
+                });
                 await dbContext.SaveChangesAsync();
             }
             return mapper.Map<CreationResult>(model);
@@ -251,6 +258,15 @@ namespace MTWireGuard.Application.Services
                     PublicKey = user.PublicKey,
                     PrivateKey = user.PrivateKey
                 });
+                var lkt = await dbContext.LastKnownTraffic.FindAsync(userID);
+                if (lkt == null)
+                    await dbContext.LastKnownTraffic.AddAsync(new()
+                    {
+                        UserID = userID,
+                        RX = 0,
+                        TX = 0,
+                        CreationTime = DateTime.Now
+                    });
                 await dbContext.SaveChangesAsync();
                 result = new()
                 {
@@ -285,7 +301,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> UpdateUser(UserUpdateModel user)
         {
-            var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user);
+            var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user.);
             var mtUpdate = await wrapper.UpdateUser(mtPeer);
             if (mtUpdate.Success)
             {
@@ -323,6 +339,13 @@ namespace MTWireGuard.Application.Services
                         DNSAddress = user.DNSAddress,
                         InheritIP = user.InheritIP,
                         TrafficLimit = user.Traffic
+                    });
+                    await dbContext.LastKnownTraffic.AddAsync(new()
+                    {
+                        UserID = user.Id,
+                        RX = 0,
+                        TX = 0,
+                        CreationTime = DateTime.Now
                     });
                 }
                 await dbContext.SaveChangesAsync();

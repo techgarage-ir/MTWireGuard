@@ -20,13 +20,6 @@ namespace MTWireGuard.Application.MinimalAPI
         public static async Task<Results<Ok<List<WGServerViewModel>>, NotFound>> GetAll([FromServices] IMikrotikRepository API)
         {
             var servers = await API.GetServersAsync();
-            //if (servers.Any())
-            //{
-            //    var traffics = await API.GetServersTraffic();
-            //    return TypedResults.Ok(servers);
-            //}
-            //else
-            //    TypedResults.NotFound();
             return servers.Any() ? TypedResults.Ok(servers) : TypedResults.NotFound();
         }
 
@@ -46,9 +39,7 @@ namespace MTWireGuard.Application.MinimalAPI
             [FromServices] IMapper mapper,
             int id,
             [FromBody] UpdateServerRequest request)
-            //HttpRequest httpRequest)
         {
-            //var request = await httpRequest.ReadFromJsonAsync<UpdateServerRequest>();
             request.Id = id;
             var model = mapper.Map<ServerUpdateModel>(request);
             var update = await API.UpdateServer(model);

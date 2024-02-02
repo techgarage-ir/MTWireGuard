@@ -386,14 +386,14 @@ $(function() {
     let data = new FormData(e.target);
     api.servers.create({
       name: data.get('Name'),
-      port: data.get('Port'),
-      mtu: data.get('MTU'),
+      port: data.get('Port') || null,
+      mtu: data.get('MTU') || null,
       privateKey: data.get('PrivateKey'),
       ipAddress: `${data.get('IPAddress')}/${data.get('IPCidr')}`,
       useIPPool: data.get('UseIPPool') != 'on',
-      ipPoolId: data.get('IPPoolId'),
+      ipPoolId: data.get('IPPoolId') || null,
       inheritDNS: data.get('InheritDNS') == 'on',
-      dnsAddress: data.get('DNSAddress'),
+      dnsAddress: data.get('DNSAddress') || null,
       enabled: true
     }).then(data => {
       const toastMSG = new toastMessage("Create Server", data.body, data.title, data.background);

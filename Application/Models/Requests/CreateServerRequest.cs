@@ -1,14 +1,18 @@
-﻿namespace MTWireGuard.Application.Models.Requests
+﻿using System.ComponentModel;
+
+namespace MTWireGuard.Application.Models.Requests
 {
     public class CreateServerRequest
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public ushort Port { get; set; } = 13231;
+        [DefaultValue(13231)]
+        public ushort? Port { get; set; }
 
-        public ushort MTU { get; set; } = 1420;
+        [DefaultValue(1420)]
+        public ushort? MTU { get; set; }
 
-        public string PrivateKey { get; set; }
+        public string? PrivateKey { get; set; }
 
         public bool Enabled { get; set; }
 
@@ -16,10 +20,10 @@
 
         public bool UseIPPool { get; set; }
 
-        public int IPPoolId { get; set; }
+        public int? IPPoolId { get; set; }
 
         public bool InheritDNS { get; set; }
 
-        public string DNSAddress { get; set; }
+        public string? DNSAddress { get; set; }
     }
 }

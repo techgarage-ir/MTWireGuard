@@ -88,7 +88,8 @@ namespace MTWireGuard.Application.Mapper
             if (dbItem == null || dbItem.IPPoolId == null)
                 return string.Empty;
             var pools = await api.GetIPPools();
-            return pools.Find(p => p.Id == dbItem.IPPoolId).Ranges.FirstOrDefault();
+            var ipPool = pools.Find(p => p.Id == dbItem.IPPoolId);
+            return ipPool != null ? ipPool.Ranges.FirstOrDefault() : string.Empty;
         }
     }
 }

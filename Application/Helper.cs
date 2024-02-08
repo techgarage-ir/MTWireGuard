@@ -154,14 +154,6 @@ namespace MTWireGuard.Application
                             lastKnown.TX = old.TX;
                             lastKnown.CreationTime = DateTime.Now;
                             dbContext.LastKnownTraffic.Update(lastKnown);
-                            //if (lastKnown != null)
-                            //{
-                            //    dbContext.LastKnownTraffic.Update(lastKnown);
-                            //}
-                            //else
-                            //{
-                            //    await dbContext.LastKnownTraffic.AddAsync(lastKnown);
-                            //}
                             item.ResetNotes = $"System reset detected at: {DateTime.Now}";
                             await dbContext.DataUsages.AddAsync(item);
                         }
@@ -181,9 +173,13 @@ namespace MTWireGuard.Application
                     await dbContext.SaveChangesAsync();
                     transaction.Commit();
                 }
+                catch (DbUpdateException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    transaction.Rollback();
+                }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
                     Console.WriteLine(ex.Message);
                 }
             }

@@ -363,7 +363,6 @@ $(function() {
             let username = rowData['name'];
             $('#QRModalLabel').text(username + "'s QR");
             api.users.qr(id).then((qrData) => {
-              console.log(qrData);
               $('#qr-src').attr('src', `data:image/png;base64,${qrData}`);
             });
           });
@@ -372,9 +371,7 @@ $(function() {
             let row = dt_basic.row(tr);
             let rowData = row.data();
             let id = rowData['id'];
-            console.log(`DL: ${id}`);
             api.users.download(id).then((dlLink) => {
-              console.log(dlLink);
                 const a = document.createElement('a');
                 a.href = dlLink;
                 a.click();

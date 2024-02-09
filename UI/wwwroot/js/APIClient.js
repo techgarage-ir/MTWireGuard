@@ -1,19 +1,30 @@
 class APIClient {
-    constructor() {
+    constructor() { }
+
+    extractFilenameFromHeader(headers) {
+        const contentDisposition = headers.get('Content-Disposition');
+        if (contentDisposition && contentDisposition.includes('filename=')) {
+            return contentDisposition.split('filename=')[1];
+        }
+        return 'downloaded-file';
     }
 
-    async makeRequest(endpoint, method = 'GET', body = null) {
+    async makeRequest(endpoint, method = 'GET', body = null, download = false) {
         try {
-            const response = await fetch(endpoint, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: body ? JSON.stringify(body) : null
-            });
+            if (download) {
+                return endpoint;
+            } else {
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: body ? JSON.stringify(body) : null
+                });
 
-            const result = await response.json();
-            return result;
+                const result = await response.json();
+                return result;
+            }
         } catch (err) {
             throw err;
         }
@@ -52,7 +63,7 @@ class APIClient {
         update: (userId, updatedUser) => this.makeRequest(this.endpoints.users.Single(userId), 'PUT', updatedUser),
         sync: (userId, updatedUser) => this.makeRequest(this.endpoints.users.Sync(userId), 'PATCH', updatedUser),
         qr: (userId) => this.makeRequest(this.endpoints.users.QR(userId)),
-        download: (userId) => this.makeRequest(this.endpoints.users.Download(userId)),
+        download: (userId) => this.makeRequest(this.endpoints.users.Download(userId), 'GET', null, true),
         delete: (userId) => this.makeRequest(this.endpoints.users.Single(userId), 'DELETE'),
         activate: (userId, isEnabled) => this.makeRequest(this.endpoints.users.Activation(userId), 'PATCH', isEnabled)
     };

@@ -51,16 +51,14 @@ namespace MTWireGuard.Application.MinimalAPI
             string filename = string.IsNullOrWhiteSpace(user.Name) ? user.Interface : user.Name;
             return TypedResults.File(
                 fileContents: bytesInStream,
-                fileDownloadName: filename);
+                fileDownloadName: filename + ".conf");
         }
 
         public static async Task<Ok<ToastMessage>> Create(
             [FromServices] IMikrotikRepository API,
             [FromServices] IMapper mapper,
             [FromBody] CreateClientRequest request)
-            //HttpRequest request)
         {
-            //var ucm = await request.ReadFromJsonAsync<CreateClientRequest>();
             var model = mapper.Map<UserCreateModel>(request);
             var make = await API.CreateUser(model);
             var message = mapper.Map<ToastMessage>(make);

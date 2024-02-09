@@ -77,9 +77,10 @@ namespace MTWireGuard.Application.Services
         {
             WGPeerViewModel User = await GetUser(id);
             WGServerViewModel Server = await GetServer(User.Interface);
+            DNS MTDNS = await GetDNS();
             string IP = Environment.GetEnvironmentVariable("MT_PUBLIC_IP"),
                 Endpoint = Server != null ? $"{IP}:{Server.ListenPort}" : "",
-                DNS = !User.InheritDNS ? User.DNSAddress : Server.DNSAddress;
+                DNS = !User.InheritDNS ? User.DNSAddress : Server?.DNSAddress ?? MTDNS.Servers;
             return $"[Interface]{Environment.NewLine}" +
                 $"Address = {User.Address ?? "0.0.0.0/0"}{Environment.NewLine}" +
                 $"PrivateKey = {User.PrivateKey}{Environment.NewLine}" +

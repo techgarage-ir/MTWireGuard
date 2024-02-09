@@ -375,7 +375,9 @@ $(function() {
             console.log(`DL: ${id}`);
             api.users.download(id).then((dlLink) => {
               console.log(dlLink);
-              window.location = dlLink;
+                const a = document.createElement('a');
+                a.href = dlLink;
+                a.click();
             });
           });
           dt_basic.on('click', 'a.item-edit', function (e) {

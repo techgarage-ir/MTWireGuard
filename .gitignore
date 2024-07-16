@@ -367,3 +367,6 @@ FodyWeavers.xsd
 *.tar
 .editorconfig
 /replaceStringInBranch.sh
+/build.bat
+/publish.bat
+/run.bat

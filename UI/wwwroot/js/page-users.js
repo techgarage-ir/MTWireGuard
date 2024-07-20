@@ -112,7 +112,7 @@ $(function() {
           { data: 'isEnabled' },
           { data: 'name' },
           { data: 'interface' },
-          { data: 'address'},
+          { data: 'ipAddress'},
           { data: 'traffic' },
           { data: 'expire' },
           { data: 'isDifferent' }
@@ -152,7 +152,7 @@ $(function() {
             targets: 3
           },
           {
-            // Allowed Address
+            // IP Address
             responsivePriority: 3,
             targets: 4
           },
@@ -391,7 +391,7 @@ $(function() {
                     $('#edit-username').val(value);
                   break;
                   case 'address':
-                    $('#edit-allowed-address').val(value.replace('/32', ''));
+                    $('#edit-ip-address').val(value.replace('/32', ''));
                   break;
                   case 'publicKey':
                   case 'privateKey':
@@ -502,8 +502,8 @@ $(function() {
   // Toggle dynamic inputs
   toggleDynamicInput($('#add-dns-dynamic'), $('#add-dns-server'));
   toggleDynamicInput($('#edit-dns-dynamic'), $('#edit-dns-address'));
-  toggleDynamicInput($('#add-ip-dynamic'), $('#add-allowed-address'));
-  toggleDynamicInput($('#edit-ip-dynamic'), $('#edit-allowed-address'));
+  toggleDynamicInput($('#add-ip-dynamic'), $('#add-ip-address'));
+  toggleDynamicInput($('#edit-ip-dynamic'), $('#edit-ip-address'));
   
   // FormValidation
 
@@ -527,14 +527,15 @@ $(function() {
       publicKey: data.get('PublicKey'),
       presharedKey: data.get('PresharedKey'),
       inheritIP: data.get('InheritIP') == 'on',
-      allowedAddress: data.get('AllowedAddress'),
+      IPAddress: data.get('IPAddress'),
+      allowedAddress: data.get('AllowedAddress') || null,
       endpointAddress: data.get('Endpoint'),
       endpointPort: data.get('EndpointPort') || null,
       keepalive: data.get('KeepAlive') || null,
       inheritDNS: data.get('InheritDNS') == 'on',
       dnsAddress: data.get('DNSAddress'),
       expire: data.get('Expire'),
-      traffic: data.get('Traffic'),
+      traffic: data.get('Traffic') || 0,
       enabled: form.find('button.btn-toggle').attr('aria-pressed') == 'true'
     }).then(data => {
       const toastMSG = new toastMessage("Create User", data.body, data.title, data.background);
@@ -552,6 +553,7 @@ $(function() {
   $('#editUserForm').on('submit', e => {
     let form = $(e.target);
     let data = new FormData(e.target);
+    console.log(data);
     api.users.update(data.get('ID'), {
       name: data.get('Username') || null,
       password: data.get('Password') || null,
@@ -560,6 +562,7 @@ $(function() {
       publicKey: data.get('PublicKey') || null,
       presharedKey: data.get('PresharedKey') || null,
       inheritIP: data.get('InheritIP') == 'on',
+      ipAddress: data.get('IPAddress') || null,
       allowedAddress: data.get('AllowedAddress') || null,
       endpointAddress: data.get('Endpoint') || null,
       endpointPort: data.get('EndpointPort') || null,

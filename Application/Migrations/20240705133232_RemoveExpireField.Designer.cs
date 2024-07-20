@@ -3,6 +3,7 @@ using System;
 using MTWireGuard.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTWireGuard.Application.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20240705133232_RemoveExpireField")]
+    partial class RemoveExpireField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -72,6 +75,9 @@ namespace MTWireGuard.Application.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DNSAddress")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("ExpireID")
                         .HasColumnType("INTEGER");
 
@@ -80,6 +86,17 @@ namespace MTWireGuard.Application.Migrations
 
                     b.Property<bool>("InheritIP")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrivateKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PublicKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("RX")
                         .HasColumnType("INTEGER");
@@ -92,7 +109,10 @@ namespace MTWireGuard.Application.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Id")
+                    b.HasIndex("PrivateKey")
+                        .IsUnique();
+
+                    b.HasIndex("PublicKey")
                         .IsUnique();
 
                     b.ToTable("Users");

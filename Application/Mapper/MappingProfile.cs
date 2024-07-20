@@ -126,7 +126,7 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.StartDate,
                     opt => opt.MapFrom(src => ConvertToDate(src.StartDate)))
                 .ForMember(dest => dest.StartTime,
-                    opt => opt.MapFrom(src => (src.StartTime != "startup") ? TimeSpan.ParseExact(src.StartTime, "hh\\:mm\\:ss", CultureInfo.InvariantCulture) : new TimeSpan()))
+                    opt => opt.MapFrom(src => (src.StartTime != "startup") ? TimeOnly.FromDateTime(Convert.ToDateTime(src.StartTime)) : new TimeOnly())) // change to timeonly
                 .ForMember(dest => dest.Interval,
                     opt => opt.MapFrom(src => ConvertToTimeSpan(src.Interval)))
                 .ForMember(dest => dest.NextRun,
@@ -136,6 +136,17 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Enabled,
                     opt => opt.MapFrom(src => !src.Disabled));
             CreateMap<SchedulerCreateModel, MikrotikAPI.Models.SchedulerCreateModel>()
+                .ForMember(dest => dest.Policy,
+                    opt => opt.MapFrom(src => string.Join(',', src.Policies)))
+                .ForMember(dest => dest.StartDate,
+                    opt => opt.MapFrom(src => DateToString(src.StartDate)))
+                .ForMember(dest => dest.StartTime,
+                    opt => opt.MapFrom(src => TimeToString(src.StartTime)))
+                .ForMember(dest => dest.Interval,
+                    opt => opt.MapFrom(src => TimeToString(src.Interval)));
+            CreateMap<SchedulerUpdateModel, MikrotikAPI.Models.SchedulerUpdateModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.Policy,
                     opt => opt.MapFrom(src => string.Join(',', src.Policies)))
                 .ForMember(dest => dest.StartDate,
@@ -255,7 +266,6 @@ namespace MTWireGuard.Application.Mapper
 
         private static DateTime ConvertToDateTime(string input)
         {
-            //input ??= "00:00:00";
             string inputs = input == null || input == "" ? "00:00:00" : input;
             string[] formats = ["yyyy-MM-dd HH:mm:ss", "MMM/dd HH:mm:ss", "HH:mm:ss"];
             try
@@ -276,6 +286,11 @@ namespace MTWireGuard.Application.Mapper
         private static string DateToString(DateOnly? date)
         {
             return date.HasValue ? date.Value.ToString("yyyy-MM-dd") : string.Empty;
+        }
+
+        private static string TimeToString(TimeOnly? time)
+        {
+            return time.HasValue ? time.Value.ToString(@"HH\:mm\:ss") : string.Empty;
         }
 
         private static string TimeToString(TimeSpan? time)

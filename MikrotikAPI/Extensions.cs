@@ -6,8 +6,16 @@ namespace MikrotikAPI
     {
         public static T ToModel<T>(this string str)
         {
-            if (string.IsNullOrWhiteSpace(str)) return default;
-            return JsonConvert.DeserializeObject<T>(str);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(str)) return default;
+                return JsonConvert.DeserializeObject<T>(str);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return default;
+            }
         }
     }
 }

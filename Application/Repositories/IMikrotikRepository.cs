@@ -28,6 +28,7 @@ namespace MTWireGuard.Application.Repositories
         Task<string> RunScript(string name);
         Task<List<SchedulerViewModel>> GetSchedulers();
         Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler);
+        Task<CreationResult> UpdateScheduler(Models.Mikrotik.SchedulerUpdateModel scheduler);
         Task<CreationResult> CreateServer(ServerCreateModel server);
         Task<CreationResult> CreateUser(UserCreateModel peer);
         Task<CreationResult> SyncUser(UserSyncModel user);

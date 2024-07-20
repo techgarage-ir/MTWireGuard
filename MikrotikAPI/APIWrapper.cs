@@ -232,7 +232,12 @@ namespace MikrotikAPI
 
         public async Task<CreationStatus> UpdateScript(ScriptUpdateModel script)
         {
-            return await UpdateItem(Endpoints.Scripts, script, script.Id);
+            var itemJson = JObject.FromObject(script, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            });
+            return await UpdateItem(Endpoints.Scripts, itemJson, script.Id);
         }
 
         public async Task<string> RunScript(string name)
@@ -249,6 +254,21 @@ namespace MikrotikAPI
         public async Task<CreationStatus> CreateScheduler(SchedulerCreateModel scheduler)
         {
             return await CreateItem<Scheduler>(Endpoints.Scheduler, scheduler);
+        }
+
+        public async Task<CreationStatus> UpdateScheduler(SchedulerUpdateModel scheduler)
+        {
+            var itemJson = JObject.FromObject(scheduler, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            });
+            return await UpdateItem(Endpoints.Scheduler, itemJson, scheduler.Id);
+        }
+
+        public async Task<CreationStatus> DeleteScheduler(string id)
+        {
+            return await DeleteItem(Endpoints.Scheduler, id);
         }
 
         public async Task<List<IPPool>> GetIPPools()

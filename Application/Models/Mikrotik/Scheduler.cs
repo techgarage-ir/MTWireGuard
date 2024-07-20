@@ -13,21 +13,34 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string Name { get; set; }
         public string Owner { get; set; }
         public DateOnly StartDate { get; set; }
-        public TimeSpan StartTime { get; set; }
+        public TimeOnly StartTime { get; set; }
         public TimeSpan Interval { get; set; }
         public List<string> Policies { get; set; }
         public int RunCount { get; set; }
         public DateTime NextRun { get; set; }
         public string OnEvent { get; set; }
+        public string Comment { get; set; }
         public bool Enabled { get; set; }
     }
     public class SchedulerCreateModel
     {
         public string Name { get; set; }
         public DateOnly? StartDate { get; set; }
-        public TimeSpan? StartTime { get; set; }
+        public TimeOnly? StartTime { get; set; }
         public TimeSpan? Interval { get; set; }
         public List<string>? Policies { get; set; }
         public string? OnEvent { get; set; }
+        public string? Comment { get; set; }
+    }
+    public class SchedulerUpdateModel
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeSpan? Interval { get; set; }
+        public List<string>? Policies { get; set; }
+        public string? OnEvent { get; set; }
+        public string? Comment { get; set; }
     }
 }

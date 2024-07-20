@@ -25,6 +25,8 @@ namespace MikrotikAPI.Models
         public string NextRun { get; set; }
         [JsonProperty("on-event")]
         public string OnEvent { get; set; }
+        [JsonProperty("comment")]
+        public string Comment { get; set; }
         public bool Disabled { get; set; }
     }
     public class SchedulerCreateModel
@@ -41,5 +43,26 @@ namespace MikrotikAPI.Models
         public string Policy { get; set; }
         [JsonProperty("on-event")]
         public string OnEvent { get; set; }
+        [JsonProperty("comment")]
+        public string Comment { get; set; }
+    }
+    public class SchedulerUpdateModel
+    {
+        [JsonProperty(".id")]
+        public string Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("start-date")]
+        public string StartDate { get; set; }
+        [JsonProperty("start-time")]
+        public string StartTime { get; set; }
+        [JsonProperty("interval")]
+        public string Interval { get; set; }
+        [JsonProperty("policy")]
+        public string Policy { get; set; }
+        [JsonProperty("on-event")]
+        public string OnEvent { get; set; }
+        [JsonProperty("comment")]
+        public string Comment { get; set; }
     }
 }

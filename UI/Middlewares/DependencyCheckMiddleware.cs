@@ -4,14 +4,9 @@ using Razor.Templating.Core;
 
 namespace MTWireGuard.Middlewares
 {
-    public class DependencyCheckMiddleware
+    public class DependencyCheckMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public DependencyCheckMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+        private readonly RequestDelegate _next = next;
 
         public async Task InvokeAsync(HttpContext context, IMikrotikRepository API)
         {

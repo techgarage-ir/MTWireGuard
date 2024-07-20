@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MikrotikAPI;
 using MTWireGuard.Application.Models;
@@ -115,11 +116,11 @@ namespace MTWireGuard.Application.MinimalAPI
         /// </summary>
         public static async Task<Results<Accepted, ProblemHttpResult>> TrafficUsageUpdate(
             [FromServices] IMapper mapper,
+            [FromServices] Serilog.ILogger logger,
             [FromServices] DBContext dbContext,
             [FromServices] IMikrotikRepository mikrotikRepository,
             HttpContext context)
         {
-
             StreamReader reader = new(context.Request.Body);
             string body = await reader.ReadToEndAsync();
 
@@ -128,7 +129,7 @@ namespace MTWireGuard.Application.MinimalAPI
 
             if (updates == null || updates.Count < 1) return TypedResults.Problem("Empty data");
 
-            Helper.HandleUserTraffics(updates, dbContext, mikrotikRepository);
+            Helper.HandleUserTraffics(updates, dbContext, mikrotikRepository, logger);
 
             return TypedResults.Accepted("Done");
         }

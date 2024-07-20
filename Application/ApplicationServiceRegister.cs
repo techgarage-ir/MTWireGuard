@@ -1,15 +1,12 @@
-﻿using Hangfire;
-using Hangfire.Storage.SQLite;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using MTWireGuard.Application.Mapper;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Services;
+using Serilog;
+using Serilog.Ui.SqliteDataProvider;
+using Serilog.Ui.Web;
 using System.Reflection;
-using System.Text;
 
 namespace MTWireGuard.Application
 {
@@ -17,15 +14,14 @@ namespace MTWireGuard.Application
     {
         public static void AddApplicationServices(this IServiceCollection services)
         {
+            // Add Serilog
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddSerilog(Helper.LoggerConfiguration(), dispose: true);
+            });
+
             // Add DBContext
             services.AddDbContext<DBContext>();
-
-            // Add HangFire
-            services.AddHangfire(config =>
-            {
-                config.UseSQLiteStorage(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "MikrotikWireguard.db"));
-            });
-            services.AddHangfireServer();
 
             // Auto Mapper Configurations
             services.AddSingleton<PeerMapping>();
@@ -79,6 +75,9 @@ namespace MTWireGuard.Application
                 o.Conventions.AllowAnonymousToPage("/Login");
             });
 
+            // Add HttpContextAccessor 
+            services.AddHttpContextAccessor();
+
             // Add Session
             services.AddDistributedMemoryCache();
 
@@ -91,6 +90,12 @@ namespace MTWireGuard.Application
 
             // Add CORS
             services.AddCors();
+
+            // Add SerilogUI
+            services.AddSerilogUi(options =>
+            {
+                options.UseSqliteServer($"Data Source={Helper.GetLogPath("logs.db")}", "Logs");
+            });
         }
     }
 }

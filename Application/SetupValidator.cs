@@ -1,86 +1,77 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using MTWireGuard.Application.Models;
+﻿using Microsoft.Extensions.DependencyInjection;
 using MTWireGuard.Application.Repositories;
-using MTWireGuard.Application.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Serilog;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MTWireGuard.Application
 {
     public class SetupValidator(IServiceProvider serviceProvider)
     {
         private IMikrotikRepository api;
+        private ILogger logger;
 
-        public async Task Validate()
+        public static bool IsValid { get; private set; }
+        public static string Title { get; private set; }
+        public static string Description { get; private set; }
+
+        public async Task<bool> Validate()
         {
-            var envVariables = ValidateEnvironmentVariables();
-            if (envVariables)
+            InitializeServices();
+
+            if (ValidateEnvironmentVariables())
             {
-                Console.BackgroundColor = ConsoleColor.Black;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[-] Environment variables are not set!");
-                Console.WriteLine($"[!] Please set \"MT_IP\", \"MT_USER\", \"MT_PASS\", \"MT_PUBLIC_IP\" variables in container environment.");
-                Console.ResetColor();
-                Shutdown();
+                LogAndDisplayError("Environment variables are not set!", "Please set \"MT_IP\", \"MT_USER\", \"MT_PASS\", \"MT_PUBLIC_IP\" variables in container environment.");
+                IsValid = false;
+                return false;
             }
 
-            serviceProvider.GetService<DBContext>().Database.EnsureCreated();
-            api = serviceProvider.GetService<IMikrotikRepository>();
+            if (!File.Exists(Helper.GetIDFile()))
+            {
+                using var fs = File.OpenWrite(Helper.GetIDFile());
+                var id = Guid.NewGuid().ToString();
+                id = id[(id.LastIndexOf('-') + 1)..];
+                byte[] identifier = new UTF8Encoding(true).GetBytes(id);
+                fs.Write(identifier, 0, identifier.Length);
+            }
 
             var (apiConnection, apiConnectionMessage) = await ValidateAPIConnection();
             if (!apiConnection)
             {
-                Console.BackgroundColor = ConsoleColor.Black;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[-] Error connecting to the router api!");
-                Console.WriteLine($"[!] {apiConnectionMessage}");
-                Console.ResetColor();
-                Shutdown();
+                var MT_IP = Environment.GetEnvironmentVariable("MT_IP");
+                var ping = new Ping();
+                var reply = ping.Send(MT_IP, 60 * 1000);
+                if (reply.Status == IPStatus.Success)
+                {
+                    LogAndDisplayError("Error connecting to the router api!", apiConnectionMessage);
+                }
+                else
+                {
+                    LogAndDisplayError("Error connecting to the router api!", $"Can't find Mikrotik API server at address: {MT_IP}\r\nping status: {reply.Status}");
+                }
+                IsValid = false;
+                return false;
             }
 
             var ip = GetIPAddress();
             if (string.IsNullOrEmpty(ip))
             {
-                Console.BackgroundColor = ConsoleColor.Black;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[-] Error getting container IP address!");
-                Console.ResetColor();
-                Shutdown();
+                LogAndDisplayError("Error getting container IP address!", "Invalid container IP address.");
+                IsValid = false;
+                return false;
             }
-            var scripts = await api.GetScripts();
-            var schedulers = await api.GetSchedulers();
-            var trafficScript = scripts.Find(x => x.Name == "SendTrafficUsage");
-            var trafficScheduler = schedulers.Find(x => x.Name == "TrafficUsage");
 
-            if (trafficScript == null)
+            if (!await api.TryConnectAsync())
             {
-                var create = await api.CreateScript(new()
-                {
-                    Name = "SendTrafficUsage",
-                    Policies = ["write", "read", "test"],
-                    DontRequiredPermissions = false,
-                    Source = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage")
-                });
-                var result = create.Code;
+                LogAndDisplayError("Error connecting to the router api!", "Connecting to API failed.");
+                IsValid = false;
+                return false;
             }
-            if (trafficScheduler == null)
-            {
-                var create = await api.CreateScheduler(new()
-                {
-                    Name = "TrafficUsage",
-                    Interval = new TimeSpan(0, 5, 0),
-                    OnEvent = "SendTrafficUsage",
-                    Policies = ["write", "read", "test"]
-                });
-                var result = create.Code;
-            }
+
+            await EnsureTrafficScripts(ip);
+            IsValid = true;
+            return true;
         }
 
         private static bool ValidateEnvironmentVariables()
@@ -105,7 +96,7 @@ namespace MTWireGuard.Application
             }
         }
 
-        private static string GetIPAddress()
+        private string GetIPAddress()
         {
             try
             {
@@ -115,8 +106,66 @@ namespace MTWireGuard.Application
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                logger.Error(ex, "Error getting container IP address.");
                 return string.Empty;
+            }
+        }
+
+        private void LogAndDisplayError(string title, string description)
+        {
+            Title = title;
+            Description = description;
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[-] {Title}");
+            Console.WriteLine($"[!] {Description}");
+            Console.ResetColor();
+            logger.Error("Error in container configuration", new { Error = Title, Description });
+        }
+
+        private void InitializeServices()
+        {
+            serviceProvider.GetService<DBContext>().Database.EnsureCreated();
+            api = serviceProvider.GetService<IMikrotikRepository>();
+            logger = serviceProvider.GetService<ILogger>();
+        }
+
+        private async Task EnsureTrafficScripts(string ip)
+        {
+            var scripts = await api.GetScripts();
+            var schedulers = await api.GetSchedulers();
+
+            //if (scripts.Find(x => x.Name == "SendTrafficUsage") == null)
+            //{
+            //    var create = await api.CreateScript(new()
+            //    {
+            //        Name = "SendTrafficUsage",
+            //        Policies = ["write", "read", "test", "ftp"],
+            //        DontRequiredPermissions = false,
+            //        Source = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage")
+            //    });
+            //    var result = create.Code;
+            //    logger.Information("Created TrafficUsage Script", new
+            //    {
+            //        result = create
+            //    });
+            //}
+            if (schedulers.Find(x => x.Name == "TrafficUsage") == null)
+            {
+                var create = await api.CreateScheduler(new()
+                {
+                    Name = "TrafficUsage",
+                    Interval = new TimeSpan(0, 5, 0),
+                    //OnEvent = "SendTrafficUsage",
+                    OnEvent = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage"),
+                    Policies = ["write", "read", "test", "ftp"],
+                    Comment = "update wireguard peers traffic usage"
+                });
+                var result = create.Code;
+                logger.Information("Created TrafficUsage Scheduler", new
+                {
+                    result = create
+                });
             }
         }
 

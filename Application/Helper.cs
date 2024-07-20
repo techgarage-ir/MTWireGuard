@@ -1,19 +1,23 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using MTWireGuard.Application.MinimalAPI;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Repositories;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
+using Serilog.Exceptions.Core;
+using Serilog.Filters;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MTWireGuard.Application
 {
@@ -31,6 +35,11 @@ namespace MTWireGuard.Application
         public static string PeersTrafficUsageScript(string apiURL)
         {
             return $"/tool fetch mode=http url=\"{apiURL}\" http-method=post check-certificate=no http-data=([/interface/wireguard/peers/print show-ids proplist=rx,tx as-value]);";
+        }
+
+        public static string UserExpirationScript(string userID)
+        {
+            return $"/interface/wireguard/peers/disable {userID}";
         }
 
         public static int ParseEntityID(string entityID)
@@ -68,6 +77,11 @@ namespace MTWireGuard.Application
             return string.Format("{0:n" + decimalPlaces + "} {1}",
                 adjustedSize,
                 SizeSuffixes[mag]);
+        }
+
+        public static long GigabyteToByte(int gigabyte)
+        {
+            return Convert.ToInt64(gigabyte * (1024L * 1024 * 1024));
         }
 
         #region API Section
@@ -118,17 +132,20 @@ namespace MTWireGuard.Application
         }
         #endregion
 
-        public static async void HandleUserTraffics(List<DataUsage> updates, DBContext dbContext, IMikrotikRepository API)
+        public static async void HandleUserTraffics(List<DataUsage> updates, DBContext dbContext, IMikrotikRepository API, ILogger logger)
         {
             var dataUsages = await dbContext.DataUsages.ToListAsync();
             var existingItems = dataUsages.OrderBy(x => x.CreationTime).ToList();
             var lastKnownTraffics = dbContext.LastKnownTraffic.ToList();
             var users = await dbContext.Users.ToListAsync();
+
             foreach (var item in updates)
             {
                 var tempUser = users.Find(x => x.Id == item.UserID);
                 if (tempUser == null) continue;
-                using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+                using var transactionDbContext = new DBContext(); // Create a new DbContext for each transaction
+                using var transaction = await transactionDbContext.Database.BeginTransactionAsync();
                 try
                 {
                     LastKnownTraffic lastKnown = lastKnownTraffics.Find(x => x.UserID == item.UserID);
@@ -137,7 +154,7 @@ namespace MTWireGuard.Application
                     var old = existingItems.FindLast(oldItem => oldItem.UserID == item.UserID);
                     if (old == null)
                     {
-                        await dbContext.DataUsages.AddAsync(item);
+                        await transactionDbContext.DataUsages.AddAsync(item);
                         tempUser.RX = item.RX + lastKnown.RX;
                         tempUser.TX = item.TX + lastKnown.TX;
                     }
@@ -146,41 +163,58 @@ namespace MTWireGuard.Application
                         if ((old.RX <= item.RX || old.TX <= item.TX) &&
                             (old.RX != item.RX && old.TX != item.TX)) // Normal Data (and not duplicate)
                         {
-                            await dbContext.DataUsages.AddAsync(item);
+                            await transactionDbContext.DataUsages.AddAsync(item);
                         }
                         else if (old.RX > item.RX || old.TX > item.TX) // Server Reset
                         {
                             lastKnown.RX = old.RX;
                             lastKnown.TX = old.TX;
                             lastKnown.CreationTime = DateTime.Now;
-                            dbContext.LastKnownTraffic.Update(lastKnown);
+                            transactionDbContext.LastKnownTraffic.Update(lastKnown);
                             item.ResetNotes = $"System reset detected at: {DateTime.Now}";
-                            await dbContext.DataUsages.AddAsync(item);
+                            await transactionDbContext.DataUsages.AddAsync(item);
                         }
                         if (item.RX > old.RX) tempUser.RX = item.RX + lastKnown.RX;
                         if (item.TX > old.TX) tempUser.TX = item.TX + lastKnown.TX;
                     }
-                    if (tempUser.TrafficLimit > 0 && tempUser.RX + tempUser.TX >= tempUser.TrafficLimit)
+                    if (tempUser.TrafficLimit > 0 && tempUser.RX + tempUser.TX >= GigabyteToByte(tempUser.TrafficLimit))
                     {
                         // Disable User
+                        logger.Information($"User #{tempUser.Id} reached {tempUser.RX + tempUser.TX} of {GigabyteToByte(tempUser.TrafficLimit)} bandwidth.");
                         var disable = await API.DisableUser(item.UserID);
                         if (disable.Code != "200")
                         {
-                            Console.WriteLine("Failed disabling user");
+                            logger.Error("Failed disabling user", new
+                            {
+                                userId = item.UserID,
+                                disable.Code,
+                                disable.Title,
+                                disable.Description
+                            });
+                        }
+                        else
+                        {
+                            logger.Information("Disabled user due to bandwidth limit", new
+                            {
+                                item.UserID,
+                                TrafficUsed = Helper.ConvertByteSize(tempUser.RX + tempUser.TX),
+                                tempUser.TrafficLimit
+                            });
                         }
                     }
-                    dbContext.Users.Update(tempUser);
-                    await dbContext.SaveChangesAsync();
-                    transaction.Commit();
+                    transactionDbContext.Users.Update(tempUser);
+                    await transactionDbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
                 }
                 catch (DbUpdateException ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    transaction.Rollback();
+                    logger.Error(ex.Message);
+                    await transaction.RollbackAsync();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    logger.Error(ex.Message);
+                    await transaction.RollbackAsync();
                 }
             }
         }
@@ -188,6 +222,63 @@ namespace MTWireGuard.Application
         public static string GetProjectVersion()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        }
+
+        /// <summary>
+        /// Return full path of requested file in app's home directory
+        /// </summary>
+        /// <param name="filename">requested file name</param>
+        /// <returns></returns>
+        public static string GetHomePath(string filename)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "/home/app" : Path.Join(AppDomain.CurrentDomain.BaseDirectory, filename);
+        }
+
+        /// <summary>
+        /// Return full path of requested file in log files directory
+        /// </summary>
+        /// <param name="filename">requested file name</param>
+        /// <returns></returns>
+        public static string GetLogPath(string filename)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Path.Join(AppDomain.CurrentDomain.BaseDirectory, "log", filename) : Path.Join("/var/log/mtwireguard", filename);
+        }
+
+        public static string GetIDFile() => GetHomePath("identifier.id");
+        public static string GetIDContent() => File.ReadAllText(GetIDFile());
+
+        public static Serilog.Core.Logger LoggerConfiguration()
+        {
+            return new LoggerConfiguration()
+                .Enrich.WithExceptionDetails(new DestructuringOptionsBuilder()
+                .WithDefaultDestructurers()
+                .WithRootName("Message").WithRootName("Exception").WithRootName("Exception"))
+                .Enrich.WithProperty("App.Version", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0")
+                .Enrich.WithMachineName()
+                .Enrich.WithEnvironmentUserName()
+                .Enrich.WithClientId(GetIDContent())
+                .WriteTo.Logger(lc => lc
+                    .Filter.ByIncludingOnly(AspNetCoreRequestLogging())
+                    .WriteTo.File(
+                        GetLogPath("access.log"),
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 31
+                    ))
+                .WriteTo.Logger(lc => lc
+                    .Filter.ByIncludingOnly(LogEvent => LogEvent.Exception != null)
+                    .WriteTo.Seq("https://mtwglogger.techgarage.ir/"))
+                .WriteTo.Logger(lc => lc
+                    .Filter.ByExcluding(AspNetCoreRequestLogging())
+                    .WriteTo.SQLite(GetLogPath("logs.db")))
+                .CreateLogger();
+        }
+
+        private static Func<LogEvent, bool> AspNetCoreRequestLogging()
+        {
+            return e =>
+                    Matching.FromSource("Microsoft.AspNetCore.Hosting.Diagnostics").Invoke(e) ||
+                    Matching.FromSource("Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware").Invoke(e) ||
+                    Matching.FromSource("Microsoft.AspNetCore.Routing.EndpointMiddleware").Invoke(e);
         }
 
         public static TimeSpan ConvertToTimeSpan(string input)

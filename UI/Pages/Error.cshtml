@@ -1,7 +1,12 @@
 ﻿@page
 @model ErrorModel
+@inject IHttpContextAccessor contextAccessor
 @{
     Layout = null;
+    var httpContext = contextAccessor.HttpContext;
+    string title = Application.ExceptionHandlerContext.Message,
+           message = Application.ExceptionHandlerContext.StackTrace,
+           details = Application.ExceptionHandlerContext.Details;
 }
 
 <!DOCTYPE html>
@@ -32,6 +37,16 @@
 
     <!-- Theme Style Switcher-->
     <script src="assets/js/themeSwitcher.js"></script>
+
+    <style>
+        .accordion-body {
+            overflow-y: auto;
+        }
+
+        .accordion-body p {
+            max-height: 30vh;
+        }
+    </style>
 </head>
 <body>
     <div class="min-vh-100 d-flex flex-row align-items-center">
@@ -39,10 +54,45 @@
             <div class="row justify-content-center">
                 <div class="col-md-6">
                     <div class="clearfix">
-                        <h1 class="float-start display-3 me-4">500</h1>
-                        <h4 class="pt-3">@ViewBag.Title</h4>
-                        <h6>@ViewBag.Message</h6>
-                        <p class="text-medium-emphasis">@Html.Raw(ViewBag.Details)</p>
+                        <h1 class="float-start display-3 mx-2 mt-4">500</h1>
+                        <h4 class="pt-3">@title</h4>
+                        @if (!Application.SetupValidator.IsValid)
+                        {
+                            <hr />
+                            <h4 class="text-danger"><i class='bx bxs-chevrons-right'></i> Invalid Setup Variables</h4>
+                            <strong>@Application.SetupValidator.Title</strong>
+                            <br />
+                            <p>@Application.SetupValidator.Description</p>
+                        }
+                        <div class="accordion mb-3" id="infoAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#titleAccordion" aria-expanded="true" aria-controls="titleAccordion">
+                                        Error Message
+                                    </button>
+                                </h2>
+                                <div id="titleAccordion" class="accordion-collapse collapse" data-bs-parent="#infoAccordion">
+                                    <div class="accordion-body">
+                                        <p class="text-medium-emphasis text-break">@message</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#detailsAccordion" aria-expanded="true" aria-controls="detailsAccordion">
+                                        Error Details
+                                    </button>
+                                </h2>
+                                <div id="detailsAccordion" class="accordion-collapse collapse" data-bs-parent="#infoAccordion">
+                                    <div class="accordion-body">
+										<p class="text-medium-emphasis text-break">@Html.Raw(details)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="/Debug" class="btn btn-primary">
+                            <i class="bx bx-notepad me-1"></i> <span class="d-none d-lg-inline-block">View Logs</span>
+                        </a>
                     </div>
                 </div>
             </div>

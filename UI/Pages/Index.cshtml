@@ -146,6 +146,7 @@
             <div class="card-body text-center">
                 <img class="w-50" src="img/logo.png" alt="" srcset="">
                 <small class="d-block mb-1">v@(Application.Helper.GetProjectVersion())</small>
+                <small class="d-block mb-1">ID: @(Application.Helper.GetIDContent())</small>
                 <ul class="list-group list-unstyled border border-2 rounded-3">
                     <li>
                         <a class="list-group-item d-flex align-items-center bg-gradient-green" href="https://MTWireguard.techgarage.ir/">
@@ -192,11 +193,36 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>This feature will come in next versions.</p>
+                <div class="d-flex align-items-center" id="updateSpinner">
+                    <strong role="status">Checking for new version...</strong>
+                    <div class="spinner-border ms-auto" aria-hidden="true"></div>
+                </div>
+                <p class="d-none" id="updateStatus"></p>
             </div>
         </div>
     </div>
 </div>
+
+@if (!Program.isValid)
+{
+    <!-- Validation Modal -->
+    <div class="modal fade show" id="ValidationModal" tabindex="-1" aria-labelledby="ValidationModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ValidationModalLabel">There was errors connection to MikroTik API</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Go to <a href="/Debug">Debug</a> page and check error logs.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <script src="js/page-home.js"></script>

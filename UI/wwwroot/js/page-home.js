@@ -128,4 +128,59 @@ $(function() {
     $('#users-total').html(users.length.toString());
     $('#users-online').html(onlineUsers.length.toString());
   }
+
+    let updateModal = document.getElementById('updateModal');
+    let updateStatus = document.getElementById('updateStatus');
+    let updateSpinner = document.getElementById('updateSpinner');
+    updateModal.addEventListener('show.bs.modal', event => {
+        const repoOwner = 'techgarage-ir';
+        const repoName = 'MTWireGuard';
+        const currentVersion = '2.0.3.0';
+
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/tags`;
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                const latestStableVersion = findLatestStableVersion(data);
+                let message = '';
+                console.log('Latest stable version:', latestStableVersion, 'Current version:', currentVersion);
+
+                if (isNewerVersion(latestStableVersion, currentVersion)) {
+                    message = 'There is a newer version available!';
+                } else {
+                    message = 'You are up to date!';
+                }
+                updateStatus.innerText = message;
+                updateStatus.classList.add('d-block');
+                updateStatus.classList.remove('d-none');
+                updateSpinner.classList.add('d-none');
+                updateSpinner.classList.remove('d-flex');
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    });
+    updateModal.addEventListener('hide.bs.modal', event => {
+        updateStatus.innerText = '';
+        updateStatus.classList.remove('d-block');
+        updateStatus.classList.add('d-none');
+        updateSpinner.classList.remove('d-none');
+        updateSpinner.classList.add('d-flex');
+    });
+
+    function findLatestStableVersion(tags) {
+        for (let tag of tags) {
+            const tagName = tag.name;
+            if (!tagName.includes('preview') && !tagName.includes('alpha') && !tagName.includes('beta')) {
+                return tagName;
+            }
+        }
+        // If no stable version is found, return the latest tag
+        return tags[0].name;
+    }
+
+    function isNewerVersion(newVersion, oldVersion) {
+        const versionComparison = (a, b) =>
+            a.split('.').map(Number).reduce((acc, cur, i) => acc || cur - Number(b.split('.')[i]), 0);
+
+        return versionComparison(newVersion.substring(1), oldVersion.substring(1)) > 0;
+    }
 });

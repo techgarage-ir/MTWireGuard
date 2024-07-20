@@ -5,6 +5,7 @@
         public string Name { get; set; }
         public string? Endpoint { get; set; }
         public ushort? EndpointPort { get; set; }
+        public string? IPAddress { get; set; }
         public string? AllowedAddress { get; set; }
         public string? PresharedKey { get; set; }
         public string PrivateKey { get; set; }

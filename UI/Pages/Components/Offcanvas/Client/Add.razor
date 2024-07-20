@@ -19,15 +19,19 @@
             <div class="mb-3">
                 <label class="form-label" for="add-interface">Interface</label>
                 <select id="add-interface" name="Interface" class="form-select"></select>
-            </div>
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="add-allowed-address">Allowed Address</label>
+				<input type="text" id="add-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" />
+			</div>
             <div class="mb-3">
-                <label class="form-label" for="add-allowed-address">Allowed Address</label>
+                <label class="form-label" for="add-ip-address">IP Address</label>
                 <div class="input-group">
                     <div class="input-group-text">
                         <input class="form-check-input mt-0 me-1" type="checkbox" id="add-ip-dynamic" name="InheritIP" aria-label="IP from pool" checked>
                         <label class="form-check-label" for="add-ip-dynamic">Dynamic</label>
                     </div>
-                    <input id="add-allowed-address" name="AllowedAddress" type="text" class="form-control" aria-label="Allowed Address" aria-describedby="add-ip-cidr" disabled>
+                    <input id="add-ip-address" name="IPAddress" type="text" class="form-control" aria-label="IP Address" aria-describedby="add-ip-cidr" disabled>
                     <span class="input-group-text" id="add-ip-cidr">/32</span>
                 </div>
             </div>
@@ -44,7 +48,7 @@
             <div class="mb-3">
                 <label class="form-label" for="add-private-key">Private Key</label>
                 <div class="input-group input-group-merge">
-                    <input type="text" id="add-private-key" name="PrivateKey" class="form-control" aria-label="Private Key" aria-describedby="add-keygen" />
+                    <input type="text" id="add-private-key" name="PrivateKey" class="form-control" aria-label="Private Key" aria-describedby="add-keygen" value="auto" />
                     <span id="add-keygen" class="input-group-text keygen-button"><i class="bx bx-refresh"></i></span>
                 </div>
             </div>

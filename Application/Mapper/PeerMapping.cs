@@ -24,11 +24,7 @@ namespace MTWireGuard.Application.Mapper
             CreateMap<WGPeer, WGPeerViewModel>()
                 .ForMember(dest => dest.Id,
                     opt => opt.MapFrom(src => Convert.ToInt32(src.Id.Substring(1), 16)))
-                .ForMember(dest => dest.Name,
-                    opt => opt.MapFrom(src => GetPeerName(src)))
-                .ForMember(dest => dest.PrivateKey,
-                    opt => opt.MapFrom(src => GetPeerPrivateKey(src)))
-                .ForMember(dest => dest.Address,
+                .ForMember(dest => dest.AllowedAddress,
                     opt => opt.MapFrom(src => src.AllowedAddress))
                 .ForMember(dest => dest.CurrentAddress,
                     opt => opt.MapFrom(src => $"{src.CurrentEndpointAddress}:{src.CurrentEndpointPort}"))
@@ -48,8 +44,8 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => ExpireDateToString(src)))
                 .ForMember(dest => dest.LastHandshake,
                     opt => opt.MapFrom(src => GetPeerLastHandshake(src)))
-                .ForMember(dest => dest.DNSAddress,
-                    opt => opt.MapFrom(src => GetPeerDNS(src)))
+                .ForMember(dest => dest.IPAddress,
+                    opt => opt.MapFrom(src => src.ClientAddress))
                 .ForMember(dest => dest.InheritDNS,
                     opt => opt.MapFrom(src => GetPeerInheritDNS(src)))
                 .ForMember(dest => dest.InheritIP,
@@ -60,39 +56,33 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => GetPeerTrafficUsage(src)));
 
             // WGPeer
-            CreateMap<UserCreateModel, WGPeerCreateModel>();
+            CreateMap<UserCreateModel, WGPeerCreateModel>()
+                .ForMember(dest => dest.ClientAddress,
+                    opt => opt.MapFrom(src => src.IPAddress));
             CreateMap<WGPeerCreateModel, WGPeerDBModel>();
             CreateMap<UserUpdateModel, WGPeerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => $"*{src.Id:X}"));
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.ClientAddress,
+                    opt => opt.MapFrom(src => src.IPAddress));
 
             // DBUser
-            CreateMap<WGPeerViewModel, WGPeerDBModel>()
-                .ForMember(dest => dest.Expire,
-                    opt => opt.MapFrom(src => ExpireStringToDate(src.Expire)));
+            CreateMap<WGPeerViewModel, WGPeerDBModel>();
             CreateMap<UserSyncModel, WGPeerDBModel>();
             CreateMap<UserSyncModel, WGPeerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => $"*{src.Id:X}"));
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)));
             CreateMap<UserUpdateModel, WGPeerDBModel>();
         }
-
-        private string GetPeerName(WGPeer source)
+        private async Task<string> GetPeerExpire(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).Name ?? string.Empty : string.Empty;
-        }
-
-        private string? GetPeerPrivateKey(WGPeer source)
-        {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).PrivateKey ?? string.Empty : string.Empty;
-        }
-
-        private DateTime GetPeerExpire(WGPeer source)
-        {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).Expire ?? new() : new();
+            var api = Provider.GetService<IMikrotikRepository>();
+            var schedulers = await api.GetSchedulers();
+            var dbuser = db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id));
+            if (dbuser == null || dbuser.ExpireID == 0) return string.Empty;
+            var expire = schedulers.Find(s => s.Id == dbuser.ExpireID); // User parser for sched id
+            return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
         }
 
         private string GetPeerLastHandshake(WGPeer source)
@@ -110,31 +100,21 @@ namespace MTWireGuard.Application.Mapper
             }
         }
 
-        private string? GetPeerDNS(WGPeer source)
-        {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).DNSAddress ?? string.Empty : string.Empty;
-        }
-
         private bool GetPeerInheritDNS(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) && db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).InheritDNS;
+            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) && db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).InheritDNS;
         }
 
         private bool GetPeerInheritIP(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) && db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).InheritIP;
+            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) && db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).InheritIP;
         }
 
         private int GetPeerTrafficUsage(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            //var dbItem = db.DataUsages.ToList().Find(u => u.UserID == Convert.ToInt32(source.Id[1..], 16));
-            //if (source.AllowedAddress == "172.16.33.29/32")
-            //    Console.WriteLine();
-            //return (dbItem != null) ? dbItem.RX + dbItem.TX : 0;
             var dbItem = db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id));
             return dbItem != null ? dbItem.RX + dbItem.TX : 0;
         }
@@ -142,13 +122,13 @@ namespace MTWireGuard.Application.Mapper
         private int GetPeerTraffic(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)) != null) ? db.Users.ToList().Find(u => u.Id == Convert.ToInt32(source.Id[1..], 16)).TrafficLimit : 0;
+            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) ? db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).TrafficLimit : 0;
         }
 
         private string ExpireDateToString(WGPeer source)
         {
-            var expireDate = GetPeerExpire(source);
-            return expireDate != new DateTime() ? expireDate.ToString() : "Unlimited";
+            var expireDate = GetPeerExpire(source).Result;
+            return !string.IsNullOrWhiteSpace(expireDate) ? expireDate : "Unlimited";
         }
 
         private DateTime ExpireStringToDate(string expire)
@@ -159,12 +139,10 @@ namespace MTWireGuard.Application.Mapper
         private bool HasDifferences(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
-            var id = Convert.ToInt32(source.Id[1..], 16);
+            var id = Helper.ParseEntityID(source.Id);
             var dbUser = db.Users.ToList().Find(x => x.Id == id);
             var dbTraffic = db.LastKnownTraffic.ToList().Find(x => x.UserID == id);
-            if (dbUser is null || dbTraffic is null) return true;
-            if (dbUser.PublicKey != source.PublicKey) return true;
-            return string.IsNullOrWhiteSpace(dbUser.PrivateKey);
+            return dbUser == null || dbTraffic == null || source.PrivateKey.Length < 5;
         }
     }
 }

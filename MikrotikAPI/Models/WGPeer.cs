@@ -12,6 +12,8 @@ namespace MikrotikAPI.Models
     {
         [JsonProperty(".id")]
         public string Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
         [JsonProperty("allowed-address")]
         public string AllowedAddress { get; set; }
         [JsonProperty("current-endpoint-address")]
@@ -26,8 +28,14 @@ namespace MikrotikAPI.Models
         public string EndpointAddress { get; set; }
         [JsonProperty("endpoint-port")]
         public string EndpointPort { get; set; }
+        [JsonProperty("private-key")]
+        public string PrivateKey { get; set; }
         [JsonProperty("public-key")]
         public string PublicKey { get; set; }
+        [JsonProperty("client-address")]
+        public string ClientAddress { get; set; }
+        [JsonProperty("client-dns")]
+        public string DNSAddress { get; set; }
         [JsonProperty("rx")]
         public string RX { get; set; }
         [JsonProperty("tx")]
@@ -44,9 +52,11 @@ namespace MikrotikAPI.Models
 
     public class WGPeerCreateModel
     {
+        [JsonProperty("name")]
+        public string Name { get; set; }
         [JsonProperty("allowed-address")]
         public string AllowedAddress { get; set; }
-        [JsonProperty("disabled")]
+        [JsonProperty("disabled"), DefaultValue(false)]
         public bool Disabled { get; set; }
         [JsonProperty("interface")]
         public string Interface { get; set; }
@@ -54,10 +64,16 @@ namespace MikrotikAPI.Models
         public string EndpointAddress { get; set; }
         [JsonProperty("endpoint-port"), DefaultValue("")]
         public string EndpointPort { get; set; }
-        [JsonProperty("public-key")]
+        [JsonProperty("private-key"), DefaultValue("")]
+        public string PrivateKey { get; set; }
+        [JsonProperty("public-key"), DefaultValue("")]
         public string PublicKey { get; set; }
         [JsonProperty("preshared-key"), DefaultValue("")]
         public string PresharedKey { get; set; }
+        [JsonProperty("client-address")]
+        public string ClientAddress { get; set; }
+        [JsonProperty("client-dns"), DefaultValue("")]
+        public string DNSAddress { get; set; }
         [JsonProperty("persistent-keepalive"), DefaultValue("")]
         public string PersistentKeepalive { get; set; }
     }
@@ -66,6 +82,8 @@ namespace MikrotikAPI.Models
     {
         [JsonProperty(".id")]
         public string Id { get; set; }
+        [JsonProperty("name"), DefaultValue("")]
+        public string Name { get; set; }
         [JsonProperty("allowed-address"), DefaultValue("")]
         public string AllowedAddress { get; set; }
         [JsonProperty("interface")]
@@ -74,10 +92,16 @@ namespace MikrotikAPI.Models
         public string EndpointAddress { get; set; }
         [JsonProperty("endpoint-port"), DefaultValue(0)]
         public ushort EndpointPort { get; set; }
+        [JsonProperty("private-key"), DefaultValue("")]
+        public string PrivateKey { get; set; }
         [JsonProperty("public-key"), DefaultValue("")]
         public string PublicKey { get; set; }
         [JsonProperty("preshared-key"), DefaultValue("")]
         public string PresharedKey { get; set; }
+        [JsonProperty("client-address")]
+        public string ClientAddress { get; set; }
+        [JsonProperty("client-dns"), DefaultValue("")]
+        public string DNSAddress { get; set; }
         [JsonProperty("persistent-keepalive"), DefaultValue(0)]
         public int PersistentKeepalive { get; set; }
     }

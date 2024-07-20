@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using MikrotikAPI;
 using MikrotikAPI.Models;
@@ -9,6 +10,7 @@ using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using NetTools;
 using QRCoder;
+using Serilog;
 using System;
 using System.Security.Principal;
 
@@ -20,13 +22,15 @@ namespace MTWireGuard.Application.Services
         private readonly DBContext dbContext;
         private readonly IMemoryCache memoryCache;
         private readonly APIWrapper wrapper;
+        private readonly ILogger logger;
         private readonly string MT_IP, MT_USER, MT_PASS;
         private bool disposed = false;
-        public MTAPI(IMapper mapper, DBContext dbContext, IMemoryCache memoryCache)
+        public MTAPI(IMapper mapper, DBContext dbContext, IMemoryCache memoryCache, ILogger logger)
         {
             this.mapper = mapper;
             this.dbContext = dbContext;
             this.memoryCache = memoryCache;
+            this.logger = logger;
 
             MT_IP = Environment.GetEnvironmentVariable("MT_IP");
             MT_USER = Environment.GetEnvironmentVariable("MT_USER");
@@ -62,7 +66,7 @@ namespace MTWireGuard.Application.Services
         }
         public async Task<WGPeerViewModel> GetUser(int id)
         {
-            var model = await wrapper.GetUser($"*{id:X}");
+            var model = await wrapper.GetUser(Helper.ParseEntityID(id));
             return mapper.Map<WGPeerViewModel>(model);
         }
         public async Task<string> GetUserHandshake(string id)
@@ -82,12 +86,12 @@ namespace MTWireGuard.Application.Services
                 Endpoint = Server != null ? $"{IP}:{Server.ListenPort}" : "",
                 DNS = !User.InheritDNS ? User.DNSAddress : Server?.DNSAddress ?? MTDNS.Servers;
             return $"[Interface]{Environment.NewLine}" +
-                $"Address = {User.Address ?? "0.0.0.0/0"}{Environment.NewLine}" +
+                $"Address = {User.IPAddress ?? "0.0.0.0/0"}{Environment.NewLine}" +
                 $"PrivateKey = {User.PrivateKey}{Environment.NewLine}" +
                 $"DNS = {DNS}" +
                 $"{Environment.NewLine}" +
                 $"[Peer]{Environment.NewLine}" +
-                $"AllowedIPs = 0.0.0.0/0{Environment.NewLine}" +
+                $"AllowedIPs = {User.AllowedAddress ?? "0.0.0.0/0"}{Environment.NewLine}" +
                 $"Endpoint = {Endpoint}{Environment.NewLine}" +
                 $"PublicKey = {Server?.PublicKey ?? ""}";
         }
@@ -192,9 +196,9 @@ namespace MTWireGuard.Application.Services
         public async Task<CreationResult> CreateUser(UserCreateModel peer)
         {
             var user = mapper.Map<MikrotikAPI.Models.WGPeerCreateModel>(peer);
-            var usedIPs = (await GetUsersAsync()).Where(u => u.Interface == peer.Interface).Select(u => u.Address);
+            var usedIPs = (await GetUsersAsync()).Where(u => u.Interface == peer.Interface).Select(u => u.IPAddress);
             var server = await GetServer(peer.Interface);
-            string allowedAddress = "0.0.0.0/0";
+            string ipAddress = "0.0.0.0/0";
             if (peer.InheritIP && !string.IsNullOrWhiteSpace(server.IPPool))
             {
                 var range = IPAddressRange.Parse(server.IPPool);
@@ -203,11 +207,11 @@ namespace MTWireGuard.Application.Services
                     if (ip.ToString() == range.Begin.ToString() || ip.ToString() == range.End.ToString()) continue; // Skip Network and Broadcast address
                     if (server.IPAddress.Contains(ip.ToString())) continue; // Skip Gateway address
                     if (usedIPs.Contains($"{ip}/32")) continue; // Skip if IP is used previously
-                    allowedAddress = ip.ToString();
+                    ipAddress = ip.ToString();
                     break;
                 }
             }
-            user.AllowedAddress = allowedAddress;
+            user.ClientAddress = ipAddress;
             //get dns
             var inheritDNS = peer.InheritDNS;
             string mtDns = (await GetDNS()).Servers;
@@ -216,30 +220,49 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.CreateUser(user);
             if (model.Success)
             {
-                var item = model.Item as MikrotikAPI.Models.WGPeer;
-                var userID = Convert.ToInt32(item.Id[1..], 16);
-                var expireID = (peer.Expire != new DateTime() && peer.Expire != null) ? HangfireManager.SetUserExpiration(userID, (DateTime)peer.Expire) : 0;
-                await dbContext.Users.AddAsync(new()
+                var item = model.Item as WGPeer;
+                var userID = Helper.ParseEntityID(item.Id);
+                var deleteScheduler = peer.Expire != new DateTime() && peer.Expire != null ? await CreateScheduler(new()
                 {
-                    Id = userID,
-                    Name = peer.Name,
-                    PrivateKey = peer.PrivateKey,
-                    PublicKey = peer.PublicKey,
-                    Expire = peer.Expire,
-                    ExpireID = expireID,
-                    TrafficLimit = peer.Traffic,
-                    DNSAddress = dnsAddress,
-                    InheritDNS = inheritDNS,
-                    InheritIP = peer.InheritIP
-                });
-                await dbContext.LastKnownTraffic.AddAsync(new()
+                    Name = $"DisableUser{userID}",
+                    Policies = ["read", "write", "test", "sensitive"],
+                    OnEvent = Helper.UserExpirationScript(Helper.ParseEntityID(userID)),
+                    StartDate = DateOnly.FromDateTime((DateTime)peer.Expire),
+                    StartTime = TimeOnly.FromDateTime((DateTime)peer.Expire),
+                    Comment = $"Disable Wireguard Peer: {peer.Name}",
+                    Interval = TimeSpan.Zero
+                }) : null;
+                var schedulerId = 0;
+                if (deleteScheduler == null || deleteScheduler.Code == "200")
                 {
-                    UserID = userID,
-                    RX = 0,
-                    TX = 0,
-                    CreationTime = DateTime.Now
-                });
-                await dbContext.SaveChangesAsync();
+                    if (deleteScheduler == null) goto skipGettingScheduler;
+                    var schedulers = await GetSchedulers();
+                    var scheduler = schedulers.Find(s => s.Name == $"DisableUser{userID}");
+                    schedulerId = scheduler.Id;
+                skipGettingScheduler:
+                    var expireID = deleteScheduler != null ? schedulerId : 0;
+                    await dbContext.Users.AddAsync(new()
+                    {
+                        Id = userID,
+                        ExpireID = expireID,
+                        TrafficLimit = peer.Traffic,
+                        InheritDNS = inheritDNS,
+                        InheritIP = peer.InheritIP
+                    });
+                    await dbContext.LastKnownTraffic.AddAsync(new()
+                    {
+                        UserID = userID,
+                        RX = 0,
+                        TX = 0,
+                        CreationTime = DateTime.Now
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+                else if (deleteScheduler != null)
+                {
+                    var deleteUser = await DeleteUser(userID);
+                    logger.Error("Failed to create scheduler with code: {code}, title: {title}, description: {desc}", deleteScheduler.Code, deleteScheduler.Title, deleteScheduler.Description);
+                }
             }
             return mapper.Map<CreationResult>(model);
         }
@@ -254,10 +277,7 @@ namespace MTWireGuard.Application.Services
             {
                 await dbContext.Users.AddAsync(new()
                 {
-                    Id = userID,
-                    Name = user.Name,
-                    PublicKey = user.PublicKey,
-                    PrivateKey = user.PrivateKey
+                    Id = userID
                 });
                 var lkt = await dbContext.LastKnownTraffic.FindAsync(userID);
                 if (lkt == null)
@@ -268,21 +288,6 @@ namespace MTWireGuard.Application.Services
                         TX = 0,
                         CreationTime = DateTime.Now
                     });
-                await dbContext.SaveChangesAsync();
-                result = new()
-                {
-                    Code = "200",
-                    Title = "Success",
-                    Description = "Database updated successfully."
-                };
-            }
-            else if (dbUser.PublicKey != user.PublicKey)
-            {
-                var fxUser = dbUser;
-                fxUser.Name = user.Name;
-                fxUser.PrivateKey = user.PrivateKey;
-                fxUser.PublicKey = user.PublicKey;
-                dbContext.Users.Update(fxUser);
                 await dbContext.SaveChangesAsync();
                 result = new()
                 {
@@ -306,21 +311,50 @@ namespace MTWireGuard.Application.Services
             var mtUpdate = await wrapper.UpdateUser(mtPeer);
             if (mtUpdate.Success)
             {
+                var schedulers = await GetSchedulers();
+                var scheduler = schedulers.Find(s => s.Name == $"DisableUser{user.Id}");
                 var exists = await dbContext.Users.FindAsync(user.Id);
                 dbContext.ChangeTracker.Clear();
-                var expireID = (user.Expire != new DateTime()) ? HangfireManager.SetUserExpiration(user.Id, user.Expire) : 0;
+                var schedulerId = scheduler?.Id ?? 0;
+                if (user.Expire != new DateTime())
+                {
+                    var deleteScheduler = scheduler == null ?
+                        await CreateScheduler(new()
+                        {
+                            Name = $"DisableUser{user.Id}",
+                            Policies = ["read", "write", "test", "sensitive"],
+                            OnEvent = Helper.UserExpirationScript(Helper.ParseEntityID(user.Id)),
+                            StartDate = DateOnly.FromDateTime(user.Expire),
+                            StartTime = TimeOnly.FromDateTime(user.Expire),
+                            Comment = $"Disable Wireguard Peer: {user.Name}",
+                            Interval = TimeSpan.Zero
+                        }) :
+                        await UpdateScheduler(new()
+                        {
+                            Id = scheduler.Id,
+                            StartDate = DateOnly.FromDateTime(user.Expire),
+                            StartTime = TimeOnly.FromDateTime(user.Expire),
+                            Interval = TimeSpan.Zero
+                        });
+                    if (deleteScheduler.Code == "200")
+                    {
+                        schedulers = await GetSchedulers();
+                        scheduler = schedulers.Find(s => s.Name == $"DisableUser{user.Id}");
+                        schedulerId = scheduler.Id;
+                    }
+                    else
+                    {
+                        logger.Error("Failed to create/update scheduler with code: {code}, title: {title}, description: {desc}", deleteScheduler.Code, deleteScheduler.Title, deleteScheduler.Description);
+                    }
+                }
+                var expireID = (user.Expire != new DateTime()) ? schedulerId : 0;
                 if (exists != null)
                 {
                     dbContext.Users.Update(new()
                     {
                         Id = user.Id,
-                        Name = user.Name ?? exists.Name,
-                        PrivateKey = user.PrivateKey ?? exists.PrivateKey,
-                        PublicKey = user.PublicKey ?? exists.PublicKey,
-                        Expire = user.Expire,
                         ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
-                        DNSAddress = user.DNSAddress,
                         InheritIP = user.InheritIP,
                         TrafficLimit = user.Traffic
                     });
@@ -331,13 +365,8 @@ namespace MTWireGuard.Application.Services
                     await dbContext.Users.AddAsync(new()
                     {
                         Id = user.Id,
-                        Name = user.Name,
-                        PublicKey = user.PublicKey,
-                        PrivateKey = user.PrivateKey,
-                        Expire = user.Expire,
                         ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
-                        DNSAddress = user.DNSAddress,
                         InheritIP = user.InheritIP,
                         TrafficLimit = user.Traffic
                     });
@@ -348,6 +377,11 @@ namespace MTWireGuard.Application.Services
                         TX = 0,
                         CreationTime = DateTime.Now
                     });
+                }
+                // Remove scheduler if expiration disabled
+                if (schedulerId > 0 && user.Expire == new DateTime())
+                {
+                    await wrapper.DeleteScheduler(Helper.ParseEntityID(schedulerId));
                 }
                 await dbContext.SaveChangesAsync();
             }
@@ -415,7 +449,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetServerEnabled(new()
             {
-                ID = $"*{id:X}",
+                ID = Helper.ParseEntityID(id),
                 Disabled = false
             });
             return mapper.Map<CreationResult>(enable);
@@ -425,7 +459,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetServerEnabled(new()
             {
-                ID = $"*{id:X}",
+                ID = Helper.ParseEntityID(id),
                 Disabled = true
             });
             return mapper.Map<CreationResult>(enable);
@@ -435,7 +469,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetUserEnabled(new()
             {
-                ID = $"*{id:X}",
+                ID = Helper.ParseEntityID(id),
                 Disabled = false
             });
             return mapper.Map<CreationResult>(enable);
@@ -445,7 +479,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetUserEnabled(new()
             {
-                ID = $"*{id:X}",
+                ID = Helper.ParseEntityID(id),
                 Disabled = true
             });
             return mapper.Map<CreationResult>(enable);
@@ -453,7 +487,7 @@ namespace MTWireGuard.Application.Services
         
         public async Task<CreationResult> DeleteServer(int id)
         {
-            var delete = await wrapper.DeleteServer($"*{id:X}");
+            var delete = await wrapper.DeleteServer(Helper.ParseEntityID(id));
             if (delete.Success)
             {
                 var server = await dbContext.Servers.FindAsync(id);
@@ -465,17 +499,23 @@ namespace MTWireGuard.Application.Services
             }
             return mapper.Map<CreationResult>(delete);
         }
+
         public async Task<CreationResult> DeleteUser(int id)
         {
-            var delete = await wrapper.DeleteUser($"*{id:X}");
+            var delete = await wrapper.DeleteUser(Helper.ParseEntityID(id));
             if (delete.Success)
             {
                 var user = await dbContext.Users.FindAsync(id);
                 if (user != null)
                 {
+                    if (user.ExpireID != null)
+                    {
+                        await wrapper.DeleteScheduler(Helper.ParseEntityID((int)user.ExpireID));
+                    }
                     dbContext.Users.Remove(user);
-                    await dbContext.SaveChangesAsync();
                 }
+                await dbContext.LastKnownTraffic.Where(t => t.UserID == id).ExecuteDeleteAsync();
+                await dbContext.SaveChangesAsync();
             }
             return mapper.Map<CreationResult>(delete);
         }
@@ -488,14 +528,6 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> CreateScript(Models.Mikrotik.ScriptCreateModel script)
         {
-            /*var model = await wrapper.CreateScript(new MikrotikAPI.Models.ScriptCreateModel()
-            {
-                DontRequiredPermissions=false,
-                Name = "SendActivityUpdates",
-                Policy = "read,write,test",
-                Source = Helper.PeersLastHandshakeScript($"https://{MT_IP}:7220/api/activity")
-            });
-            return mapper.Map<CreationResult>(model);*/
             var scr = mapper.Map<MikrotikAPI.Models.ScriptCreateModel>(script);
             var model = await wrapper.CreateScript(scr);
             return mapper.Map<CreationResult>(model);
@@ -517,6 +549,13 @@ namespace MTWireGuard.Application.Services
             var sched = mapper.Map<MikrotikAPI.Models.SchedulerCreateModel>(scheduler);
             var model = await wrapper.CreateScheduler(sched);
             return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> UpdateScheduler(Models.Mikrotik.SchedulerUpdateModel scheduler)
+        {
+            var sched = Map<MikrotikAPI.Models.SchedulerUpdateModel>(scheduler);
+            var model = await wrapper.UpdateScheduler(sched);
+            return Map<CreationResult>(model);
         }
 
         public async Task<DNS> GetDNS()
@@ -553,7 +592,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> DeleteIPPool(int id)
         {
-            var delete = await wrapper.DeleteIPPool($"*{id:X}");
+            var delete = await wrapper.DeleteIPPool(Helper.ParseEntityID(id));
             return mapper.Map<CreationResult>(delete);
         }
 
@@ -569,6 +608,24 @@ namespace MTWireGuard.Application.Services
             return mapper.Map<List<IPAddressViewModel>>(model);
         }
 
+        public T Map<T>(object source)
+        {
+            try
+            {
+                return mapper.Map<T>(source);
+            }
+            catch (AutoMapperMappingException autoMapperException)
+            {
+                logger.Error(autoMapperException, "Error mapping");
+                throw autoMapperException;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"Failed to map {ex.Message}");
+                throw ex;
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -581,12 +638,10 @@ namespace MTWireGuard.Application.Services
 
             if (disposing)
             {
-                // Free any other managed objects here.
                 dbContext.Dispose();
                 memoryCache.Dispose();
             }
 
-            // Free any unmanaged objects here.
             disposed = true;
         }
     }

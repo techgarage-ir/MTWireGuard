@@ -26,12 +26,16 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="edit-allowed-address">Allowed Address</label>
+                <input type="text" id="edit-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-ip-address">IP Address</label>
                 <div class="input-group">
                     <div class="input-group-text">
                         <input class="form-check-input mt-0 me-1" type="checkbox" id="edit-ip-dynamic" name="InheritIP" aria-label="IP from pool" checked>
                         <label class="form-check-label" for="edit-ip-dynamic">Dynamic</label>
                     </div>
-                    <input id="edit-allowed-address" name="AllowedAddress" type="text" class="form-control" aria-label="Allowed Address" aria-describedby="edit-ip-cidr" disabled>
+                    <input id="edit-ip-address" name="IPAddress" type="text" class="form-control" aria-label="IP Address" aria-describedby="edit-ip-cidr" disabled>
                     <span class="input-group-text" id="edit-ip-cidr">/32</span>
                 </div>
             </div>

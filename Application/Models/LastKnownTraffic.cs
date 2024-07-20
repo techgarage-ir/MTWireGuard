@@ -1,4 +1,4 @@
-﻿using SQLite;
+﻿using System.Data.SQLite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

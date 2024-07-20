@@ -3,20 +3,15 @@
 namespace MTWireGuard.Application.Models.Mikrotik
 {
     [PrimaryKey("Id")]
-    [Index("PrivateKey", IsUnique = true)]
-    [Index("PublicKey", IsUnique = true)]
+    [Index("Id", IsUnique = true)]
+
     public class WGPeerDBModel
     {
         public int Id { get; set; }
-        public string? Name { get; set; }
-        public string PrivateKey { get; set; }
-        public string PublicKey { get; set; }
-        public DateTime? Expire { get; set; }
         public int? ExpireID { get; set; }
         public int RX { get; set; }
         public int TX { get; set; }
         public int TrafficLimit { get; set; }
-        public string? DNSAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
     }
@@ -25,7 +20,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Address { get; set; }
+        public string AllowedAddress { get; set; }
         public string CurrentAddress { get; set; }
         public bool IsEnabled { get; set; }
         public string Interface { get; set; }
@@ -40,6 +35,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Traffic { get; set; }
         public uint TrafficUsed { get; set; }
         public string LastHandshake { get; set; }
+        public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
@@ -59,6 +55,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PersistentKeepalive { get; set; }
         public DateTime? Expire { get; set; } = null;
         public int Traffic { get; set; }
+        public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
@@ -86,6 +83,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int PersistentKeepalive { get; set; }
         public DateTime Expire { get; set; }
         public int Traffic { get; set; }
+        public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }

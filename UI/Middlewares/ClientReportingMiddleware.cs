@@ -11,7 +11,7 @@ namespace MTWireGuard.Middlewares
             {
                 var ip = context.Connection.RemoteIpAddress;
                 var users = await api.GetUsersAsync();
-                var user = users.Find(x => x.Address == $"{ip}/32");
+                var user = users.Find(x => x.IPAddress == $"{ip}/32");
                 if (user != null)
                 {
                     context.Session.Set("user", user);

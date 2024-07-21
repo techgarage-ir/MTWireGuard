@@ -231,7 +231,7 @@ namespace MTWireGuard.Application
         /// <returns></returns>
         public static string GetHomePath(string filename)
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "/home/app" : Path.Join(AppDomain.CurrentDomain.BaseDirectory, filename);
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Path.Join("/home/app", filename) : Path.Join(AppDomain.CurrentDomain.BaseDirectory, filename);
         }
 
         /// <summary>

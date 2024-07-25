@@ -30,7 +30,7 @@ namespace MTWireGuard.Application
             var (apiConnection, apiConnectionMessage) = await ValidateAPIConnection();
             if (!apiConnection)
             {
-                var MT_IP = Environment.GetEnvironmentVariable("MT_IP");
+                /*var MT_IP = Environment.GetEnvironmentVariable("MT_IP");
                 var ping = new Ping();
                 var reply = ping.Send(MT_IP, 60 * 1000);
                 if (reply.Status == IPStatus.Success)
@@ -40,7 +40,7 @@ namespace MTWireGuard.Application
                 else
                 {
                     LogAndDisplayError("Error connecting to the router api!", $"Can't find Mikrotik API server at address: {MT_IP}\r\nping status: {reply.Status}");
-                }
+                }*/
                 LogAndDisplayError("Error connecting to the router api!", apiConnectionMessage);
                 IsValid = false;
                 return false;

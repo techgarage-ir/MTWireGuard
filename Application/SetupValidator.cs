@@ -27,15 +27,6 @@ namespace MTWireGuard.Application
                 return false;
             }
 
-            if (!File.Exists(Helper.GetIDFile()))
-            {
-                using var fs = File.OpenWrite(Helper.GetIDFile());
-                var id = Guid.NewGuid().ToString();
-                id = id[(id.LastIndexOf('-') + 1)..];
-                byte[] identifier = new UTF8Encoding(true).GetBytes(id);
-                fs.Write(identifier, 0, identifier.Length);
-            }
-
             var (apiConnection, apiConnectionMessage) = await ValidateAPIConnection();
             if (!apiConnection)
             {
@@ -50,6 +41,7 @@ namespace MTWireGuard.Application
                 {
                     LogAndDisplayError("Error connecting to the router api!", $"Can't find Mikrotik API server at address: {MT_IP}\r\nping status: {reply.Status}");
                 }
+                LogAndDisplayError("Error connecting to the router api!", apiConnectionMessage);
                 IsValid = false;
                 return false;
             }

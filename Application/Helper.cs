@@ -239,13 +239,23 @@ namespace MTWireGuard.Application
         /// </summary>
         /// <param name="filename">requested file name</param>
         /// <returns></returns>
-        public static string GetLogPath(string filename)
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Path.Join(AppDomain.CurrentDomain.BaseDirectory, "log", filename) : Path.Join("/var/log/mtwireguard", filename);
-        }
+        public static string GetLogPath(string filename) => Path.Join(AppDomain.CurrentDomain.BaseDirectory, "log", filename);
 
         public static string GetIDFile() => GetHomePath("identifier.id");
-        public static string GetIDContent() => File.ReadAllText(GetIDFile());
+        public static string GetIDContent()
+        {
+            var idFile = GetIDFile();
+
+            if (!File.Exists(idFile))
+            {
+                using var fs = File.OpenWrite(idFile);
+                var id = Guid.NewGuid().ToString();
+                id = id[(id.LastIndexOf('-') + 1)..];
+                byte[] identifier = new UTF8Encoding(true).GetBytes(id);
+                fs.Write(identifier, 0, identifier.Length);
+            }
+            return File.ReadAllText(idFile);
+        }
 
         public static Serilog.Core.Logger LoggerConfiguration()
         {

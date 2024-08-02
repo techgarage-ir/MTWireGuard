@@ -55,8 +55,8 @@ namespace MTWireGuard.Application
         private static readonly string[] SizeSuffixes = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
         public static string ConvertByteSize(long value, int decimalPlaces = 2)
         {
-            if (decimalPlaces < 0) { throw new ArgumentOutOfRangeException("decimalPlaces"); }
-            if (value < 0) { return "-" + ConvertByteSize(-value, decimalPlaces); }
+            ArgumentOutOfRangeException.ThrowIfNegative(decimalPlaces);
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
             if (value == 0) { return "0"; }
 
             // mag is 0 for bytes, 1 for KB, 2, for MB, etc.
@@ -78,10 +78,35 @@ namespace MTWireGuard.Application
                 adjustedSize,
                 SizeSuffixes[mag]);
         }
-
-        public static long GigabyteToByte(int gigabyte)
+        public static string ConvertByteSize(ulong value, int decimalPlaces = 2)
         {
-            return Convert.ToInt64(gigabyte * (1024L * 1024 * 1024));
+            ArgumentOutOfRangeException.ThrowIfNegative(decimalPlaces);
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            if (value == 0) { return "0"; }
+
+            // mag is 0 for bytes, 1 for KB, 2, for MB, etc.
+            int mag = (int)Math.Log(value, 1024);
+
+            // 1L << (mag * 10) == 2 ^ (10 * mag) 
+            // [i.e. the number of bytes in the unit corresponding to mag]
+            decimal adjustedSize = (decimal)value / (1UL << (mag * 10));
+
+            // make adjustment when the value is large enough that
+            // it would round up to 1000 or more
+            if (Math.Round(adjustedSize, decimalPlaces) >= 1000)
+            {
+                mag += 1;
+                adjustedSize /= 1024;
+            }
+
+            return string.Format("{0:n" + decimalPlaces + "} {1}",
+                adjustedSize,
+                SizeSuffixes[mag]);
+        }
+
+        public static ulong GigabyteToByte(int gigabyte)
+        {
+            return Convert.ToUInt64(gigabyte * (1024L * 1024 * 1024));
         }
 
         #region API Section
@@ -103,8 +128,8 @@ namespace MTWireGuard.Application
                     var rx = arr.Find(x => x.Contains("rx")).Split('=')[1] ?? "0";
                     var tx = arr.Find(x => x.Contains("tx")).Split('=')[1] ?? "0";
                     obj.Id = id;
-                    obj.RX = int.Parse(rx);
-                    obj.TX = int.Parse(tx);
+                    obj.RX = ulong.Parse(rx);
+                    obj.TX = ulong.Parse(tx);
                     return obj;
                 }).ToList();
         }
@@ -197,7 +222,7 @@ namespace MTWireGuard.Application
                             logger.Information("Disabled user due to bandwidth limit", new
                             {
                                 item.UserID,
-                                TrafficUsed = Helper.ConvertByteSize(tempUser.RX + tempUser.TX),
+                                TrafficUsed = ConvertByteSize(tempUser.RX + tempUser.TX),
                                 tempUser.TrafficLimit
                             });
                         }

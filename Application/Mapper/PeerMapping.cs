@@ -112,7 +112,7 @@ namespace MTWireGuard.Application.Mapper
             return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) && db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).InheritIP;
         }
 
-        private int GetPeerTrafficUsage(WGPeer source)
+        private ulong GetPeerTrafficUsage(WGPeer source)
         {
             var db = Provider.GetService<DBContext>();
             var dbItem = db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id));

@@ -15,8 +15,8 @@ namespace MTWireGuard.Application.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public int UserID { get; set; }
-        public int RX { get; set; }
-        public int TX { get; set; }
+        public ulong RX { get; set; }
+        public ulong TX { get; set; }
         public bool UserReset { get; set; }
         public string? ResetNotes { get; set; }
         public DateTime CreationTime { get; set; }

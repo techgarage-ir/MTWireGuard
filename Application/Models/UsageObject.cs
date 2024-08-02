@@ -9,7 +9,7 @@ namespace MTWireGuard.Application.Models
     public class UsageObject
     {
         public string Id { get; set; }
-        public int RX { get; set; }
-        public int TX { get; set; }
+        public ulong RX { get; set; }
+        public ulong TX { get; set; }
     }
 }

@@ -9,8 +9,8 @@ namespace MTWireGuard.Application.Models.Mikrotik
     {
         public int Id { get; set; }
         public int? ExpireID { get; set; }
-        public int RX { get; set; }
-        public int TX { get; set; }
+        public ulong RX { get; set; }
+        public ulong TX { get; set; }
         public int TrafficLimit { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
@@ -28,8 +28,8 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string PublicKey { get; set; }
         public string Download { get; set; }
         public string Upload { get; set; }
-        public long DownloadBytes { get; set; }
-        public long UploadBytes { get; set; }
+        public ulong DownloadBytes { get; set; }
+        public ulong UploadBytes { get; set; }
         public bool IsDifferent { get; set; }
         public string Expire { get; set; }
         public int Traffic { get; set; }

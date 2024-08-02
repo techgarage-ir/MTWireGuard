@@ -14,9 +14,9 @@ namespace MTWireGuard.Application.Models
         [Key]
         public int UserID { get; set; }
         [DefaultValue(0)]
-        public int RX { get; set; }
+        public ulong RX { get; set; }
         [DefaultValue(0)]
-        public int TX { get; set; }
+        public ulong TX { get; set; }
         public DateTime CreationTime { get; set; }
     }
 }

@@ -77,7 +77,8 @@ let renderTableCell = (function () {
   }
 
   function renderIPAddress(full) {
-      return full.inheritIP ? `<span class="d-flex align-items-center" title="DHCP assigned IP"><i class='bx bx-hive me-1'></i> ${full.ipAddress}</span>` : `<span class="d-flex align-items-center">${full.ipAddress}</span>`;
+      let ip = full.ipAddress ?? 'N/A';
+      return full.inheritIP ? `<span class="d-flex align-items-center" title="DHCP assigned IP"><i class='bx bx-hive me-1'></i> ${ip}</span>` : `<span class="d-flex align-items-center">${ip}</span>`;
   }
 
   return {

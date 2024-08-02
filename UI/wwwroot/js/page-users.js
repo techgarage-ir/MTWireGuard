@@ -76,12 +76,17 @@ let renderTableCell = (function () {
     return '<span class="badge text-bg-warning text-uppercase">' + (data.toLowerCase() != 'unlimited' ? data.replace('T', ' ').slice(0, -3) : data) + '</span>';
   }
 
+  function renderIPAddress(full) {
+      return full.inheritIP ? `<span class="d-flex align-items-center" title="DHCP assigned IP"><i class='bx bx-hive me-1'></i> ${full.ipAddress}</span>` : `<span class="d-flex align-items-center">${full.ipAddress}</span>`;
+  }
+
   return {
     renderTitle,
     renderName,
     renderSwitch,
     renderTraffic,
-    renderExpire
+    renderExpire,
+    renderIPAddress
   }
 })();
 
@@ -154,7 +159,10 @@ $(function() {
           {
             // IP Address
             responsivePriority: 3,
-            targets: 4
+            targets: 4,
+            render: function(data, type, full, meta) {
+              return renderTableCell.renderIPAddress(full);
+            }
           },
           {
             // Traffic

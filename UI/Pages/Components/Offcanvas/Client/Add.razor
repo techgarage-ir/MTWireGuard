@@ -21,11 +21,27 @@
                 <select id="add-interface" name="Interface" class="form-select"></select>
 			</div>
 			<div class="mb-3">
-				<label class="form-label" for="add-allowed-address">Allowed Address</label>
-				<input type="text" id="add-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" />
+				<label class="form-label d-inline-flex align-items-center" for="add-allowed-address">
+                    Allowed Address <i class="bx bx-info-circle ms-2" title="Server Allowed-Address"></i>
+                </label>
+                <div class="input-group">
+				    <input type="text" id="add-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" disabled>
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="add-allowed-address-dynamic" name="DynamicAllowedAddress" aria-label="IP from pool" checked>
+                        <label class="form-check-label" for="add-allowed-address-dynamic">Auto</label>
+                    </div>
+                </div>
+			</div>
+			<div class="mb-3">
+				<label class="form-label d-inline-flex align-items-center" for="add-allowed-ips">
+                    Allowed IPs <i class="bx bx-info-circle ms-2" title="Client Allowed-IPs"></i>
+                </label>
+				<input type="text" id="add-allowed-ips" name="AllowedIPs" class="form-control" aria-label="Allowed IPs" />
 			</div>
             <div class="mb-3">
-                <label class="form-label" for="add-ip-address">IP Address</label>
+                <label class="form-label" for="add-ip-address">
+                    IP Address <i class="bx bx-info-circle ms-2" title="Client IP-Address"></i>
+                </label>
                 <div class="input-group">
                     <div class="input-group-text">
                         <input class="form-check-input mt-0 me-1" type="checkbox" id="add-ip-dynamic" name="InheritIP" aria-label="IP from pool" checked>

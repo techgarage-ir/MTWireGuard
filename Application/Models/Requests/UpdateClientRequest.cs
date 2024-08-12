@@ -13,6 +13,7 @@ namespace MTWireGuard.Application.Models.Requests
         public ushort? EndpointPort { get; set; }
         public string? IPAddress { get; set; }
         public string? AllowedAddress { get; set; }
+        public string? AllowedIPs { get; set; }
         public string? PresharedKey { get; set; }
         public string? PrivateKey { get; set; }
         public string? PublicKey { get; set; }
@@ -21,6 +22,7 @@ namespace MTWireGuard.Application.Models.Requests
         public string? Expire { get; set; }
         public string? Password { get; set; }
         public int? Traffic { get; set; }
+        public bool InheritAllowedAddress { get; set; }
         public bool InheritIP { get; set; }
         public bool InheritDNS { get; set; }
         public string? DNSAddress { get; set; }

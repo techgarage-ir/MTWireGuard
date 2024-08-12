@@ -25,11 +25,27 @@
                 <select class="form-select" id="edit-interface" name="Interface"></select>
             </div>
             <div class="mb-3">
-                <label class="form-label" for="edit-allowed-address">Allowed Address</label>
-                <input type="text" id="edit-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" />
+                <label class="form-label d-inline-flex align-items-center" for="edit-allowed-address">
+                    Allowed Address <i class="bx bx-info-circle ms-2" title="Server Allowed-Address"></i>
+                </label>
+                <div class="input-group">
+                    <input type="text" id="edit-allowed-address" name="AllowedAddress" class="form-control" aria-label="Allowed Address" disabled>
+                    <div class="input-group-text">
+                        <input class="form-check-input mt-0 me-1" type="checkbox" id="edit-allowed-address-dynamic" name="DynamicAllowedAddress" aria-label="IP from pool" checked>
+                        <label class="form-check-label" for="edit-allowed-address-dynamic">Auto</label>
+                    </div>
+                </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" for="edit-ip-address">IP Address</label>
+                <label class="form-label d-inline-flex align-items-center" for="edit-allowed-ips">
+                    Allowed IPs <i class="bx bx-info-circle ms-2" title="Client Allowed-IPs"></i>
+                </label>
+                <input type="text" id="edit-allowed-ips" name="AllowedIPs" class="form-control" aria-label="Allowed IPs" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-ip-address">
+                    IP Address <i class="bx bx-info-circle ms-2" title="Client IP-Address"></i>
+                </label>
                 <div class="input-group">
                     <div class="input-group-text">
                         <input class="form-check-input mt-0 me-1" type="checkbox" id="edit-ip-dynamic" name="InheritIP" aria-label="IP from pool" checked>

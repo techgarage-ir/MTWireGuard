@@ -1,18 +1,14 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using MikrotikAPI;
 using MikrotikAPI.Models;
-using MTWireGuard.Application.MinimalAPI;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using NetTools;
 using QRCoder;
 using Serilog;
-using System;
-using System.Security.Principal;
 
 namespace MTWireGuard.Application.Services
 {
@@ -91,7 +87,7 @@ namespace MTWireGuard.Application.Services
                 $"DNS = {DNS}" +
                 $"{Environment.NewLine}" +
                 $"[Peer]{Environment.NewLine}" +
-                $"AllowedIPs = {User.AllowedAddress ?? "0.0.0.0/0"}{Environment.NewLine}" +
+                $"AllowedIPs = {User.AllowedIPs}{Environment.NewLine}" +
                 $"Endpoint = {Endpoint}{Environment.NewLine}" +
                 $"PublicKey = {Server?.PublicKey ?? ""}";
         }
@@ -217,6 +213,9 @@ namespace MTWireGuard.Application.Services
             string mtDns = (await GetDNS()).Servers;
             string dnsAddress = (!inheritDNS) ? peer.DNSAddress : server.DNSAddress ?? string.Join(mtDns, ',');
             //end dns
+            //allowed address
+            user.AllowedAddress = peer.InheritAllowedAddress ? ipAddress : (peer.AllowedAddress ?? "0.0.0.0/0");
+            //allowed address
             var model = await wrapper.CreateUser(user);
             if (model.Success)
             {
@@ -246,6 +245,7 @@ namespace MTWireGuard.Application.Services
                         Id = userID,
                         ExpireID = expireID,
                         TrafficLimit = peer.Traffic,
+                        AllowedIPs = peer.AllowedIPs ?? "0.0.0.0/0",
                         InheritDNS = inheritDNS,
                         InheritIP = peer.InheritIP
                     });
@@ -277,7 +277,8 @@ namespace MTWireGuard.Application.Services
             {
                 await dbContext.Users.AddAsync(new()
                 {
-                    Id = userID
+                    Id = userID,
+                    AllowedIPs = "0.0.0.0/0"
                 });
                 var lkt = await dbContext.LastKnownTraffic.FindAsync(userID);
                 if (lkt == null)
@@ -308,6 +309,10 @@ namespace MTWireGuard.Application.Services
         public async Task<CreationResult> UpdateUser(UserUpdateModel user)
         {
             var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user);
+            //allowed address
+            string ipAddress = user.InheritAllowedAddress ? (await GetUser(user.Id)).IPAddress : user.IPAddress;
+            mtPeer.AllowedAddress = user.InheritAllowedAddress ? ipAddress : (user.AllowedAddress ?? "0.0.0.0/0");
+            //allowed address
             var mtUpdate = await wrapper.UpdateUser(mtPeer);
             if (mtUpdate.Success)
             {
@@ -356,7 +361,8 @@ namespace MTWireGuard.Application.Services
                         ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
                         InheritIP = user.InheritIP,
-                        TrafficLimit = user.Traffic
+                        TrafficLimit = user.Traffic,
+                        AllowedIPs = user.AllowedIPs ?? "0.0.0.0/0"
                     });
                 }
                 else
@@ -368,7 +374,8 @@ namespace MTWireGuard.Application.Services
                         ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
                         InheritIP = user.InheritIP,
-                        TrafficLimit = user.Traffic
+                        TrafficLimit = user.Traffic,
+                        AllowedIPs = user.AllowedIPs ?? "0.0.0.0/0"
                     });
                     await dbContext.LastKnownTraffic.AddAsync(new()
                     {

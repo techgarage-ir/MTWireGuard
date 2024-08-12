@@ -9,6 +9,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
     {
         public int Id { get; set; }
         public int? ExpireID { get; set; }
+        public string AllowedIPs { get; set; }
         public ulong RX { get; set; }
         public ulong TX { get; set; }
         public int TrafficLimit { get; set; }
@@ -21,6 +22,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Id { get; set; }
         public string Name { get; set; }
         public string AllowedAddress { get; set; }
+        public string AllowedIPs { get; set; }
         public string CurrentAddress { get; set; }
         public bool IsEnabled { get; set; }
         public string Interface { get; set; }
@@ -46,6 +48,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string Name { get; set; }
         public string PrivateKey { get; set; }
         public string AllowedAddress { get; set; }
+        public string AllowedIPs { get; set; }
         public bool Disabled { get; set; }
         public string Interface { get; set; }
         public string EndpointAddress { get; set; }
@@ -57,6 +60,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Traffic { get; set; }
         public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
+        public bool InheritAllowedAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
     }
@@ -74,6 +78,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Id { get; set; }
         public string Name { get; set; }
         public string AllowedAddress { get; set; }
+        public string AllowedIPs { get; set; }
         public string Interface { get; set; }
         public string EndpointAddress { get; set; }
         public ushort EndpointPort { get; set; }
@@ -85,6 +90,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Traffic { get; set; }
         public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
+        public bool InheritAllowedAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
     }

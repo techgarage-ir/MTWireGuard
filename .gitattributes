@@ -69,5 +69,5 @@
 *.css		linguist-detectable=false
 *.js		linguist-detectable=false
 ###############################################################################
-UI/wwwroot/assets/*  linguist-vendored
-UI/wwwroot/lib/*  linguist-vendored
+UI/wwwroot/assets/**  linguist-vendored
+UI/wwwroot/lib/**  linguist-vendored

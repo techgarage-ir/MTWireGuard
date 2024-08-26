@@ -262,6 +262,12 @@ namespace MTWireGuard.Application.Services
                 {
                     var deleteUser = await DeleteUser(userID);
                     logger.Error("Failed to create scheduler with code: {code}, title: {title}, description: {desc}", deleteScheduler.Code, deleteScheduler.Title, deleteScheduler.Description);
+                    return new()
+                    {
+                        Code = "500",
+                        Title = "Failed to create user",
+                        Description = "Failed to create expire script"
+                    };
                 }
             }
             return mapper.Map<CreationResult>(model);

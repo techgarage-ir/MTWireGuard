@@ -293,6 +293,9 @@ namespace MTWireGuard.Application
                 .Enrich.WithEnvironmentUserName()
                 .Enrich.WithClientId(GetIDContent())
                 .WriteTo.Logger(lc => lc
+                    .Filter.ByExcluding(AspNetCoreRequestLogging())
+                    .WriteTo.SQLite(GetLogPath("logs.db")))
+                .WriteTo.Logger(lc => lc
                     .Filter.ByIncludingOnly(AspNetCoreRequestLogging())
                     .WriteTo.File(
                         GetLogPath("access.log"),
@@ -302,9 +305,6 @@ namespace MTWireGuard.Application
                 .WriteTo.Logger(lc => lc
                     .Filter.ByIncludingOnly(LogEvent => LogEvent.Exception != null)
                     .WriteTo.Seq("https://mtwglogger.techgarage.ir/"))
-                .WriteTo.Logger(lc => lc
-                    .Filter.ByExcluding(AspNetCoreRequestLogging())
-                    .WriteTo.SQLite(GetLogPath("logs.db")))
                 .CreateLogger();
         }
 

@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MT_IP": "192.168.0.96",
         "MT_USER": "admin",
-        "MT_PASS": "",
+        "MT_PASS": "admin",
         "MT_PUBLIC_IP": "192.168.0.96"
       },
       "hotReloadEnabled": true,
@@ -34,6 +34,20 @@
       },
       "publishAllPorts": true,
       "useSSL": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "https://192.168.0.5:7220",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://192.168.0.5:7220;http://192.168.0.5:5220",
+        "MT_IP": "192.168.0.96",
+        "MT_PASS": "admin",
+        "MT_PUBLIC_IP": "192.168.0.96",
+        "MT_USER": "admin"
+      },
+      "distributionName": ""
     }
   },
   "iisSettings": {

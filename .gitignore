@@ -370,3 +370,5 @@ FodyWeavers.xsd
 /build.bat
 /publish.bat
 /run.bat
+/api doc
+/UI/Properties/launchSettings.json

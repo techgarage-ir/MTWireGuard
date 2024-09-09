@@ -1,6 +1,14 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS publish
 WORKDIR /src
 
+# Define platform
+ARG TARGETPLATFORM
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+    RID=linux-x64 ; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    RID=linux-arm64 ; \
+    fi
+
 # Copy project files
 COPY *.sln .
 COPY UI/*.csproj ./UI/
@@ -9,7 +17,7 @@ COPY MikrotikAPI/*.csproj ./MikrotikAPI/
 COPY Serilog.Ui.SqliteProvider/*.csproj ./Serilog.Ui.SqliteProvider/
 
 # Restore packages
-RUN dotnet restore --runtime linux-$BUILDARCH
+RUN dotnet restore --runtime $RID
 
 # Copy other files
 COPY UI/. ./UI/
@@ -21,7 +29,7 @@ COPY Serilog.Ui.SqliteProvider/. ./Serilog.Ui.SqliteProvider/
 RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   -o /app/publish \
   --no-restore \
-  --runtime linux-$BUILDARCH \
+  --runtime $RID \
   --self-contained true \
   /p:WarningLevel=0 \
   /p:PublishTrimmed=true

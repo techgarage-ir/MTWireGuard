@@ -13,6 +13,7 @@ namespace MTWireGuard.Application.Repositories
         Task<List<WGPeerViewModel>> GetUsersAsync();
         Task<WGPeerViewModel> GetUser(int id);
         Task<string> GetUserHandshake(string id);
+        Task<List<WGPeerLastHandshake>> GetUsersHandshakes();
         Task<string> GetUserTunnelConfig(int id);
         Task<string> GetQRCodeBase64(int id);
         Task<MTInfoViewModel> GetInfo();
@@ -27,6 +28,7 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> CreateScript(Models.Mikrotik.ScriptCreateModel script);
         Task<string> RunScript(string name);
         Task<List<SchedulerViewModel>> GetSchedulers();
+        Task<SchedulerViewModel> GetScheduler(int id);
         Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler);
         Task<CreationResult> UpdateScheduler(Models.Mikrotik.SchedulerUpdateModel scheduler);
         Task<CreationResult> CreateServer(ServerCreateModel server);

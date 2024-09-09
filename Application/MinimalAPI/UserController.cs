@@ -20,7 +20,6 @@ namespace MTWireGuard.Application.MinimalAPI
     {
         public static async Task<Results<Ok<List<WGPeerViewModel>>, NotFound>> GetAll([FromServices] IMikrotikRepository API, HttpContext context)
         {
-            var script = await API.RunScript("SendActivityUpdates");
             var users = await API.GetUsersAsync();
             if (users.Count > 0)
                 return TypedResults.Ok(users);

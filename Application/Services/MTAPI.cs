@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using MikrotikAPI;
 using MikrotikAPI.Models;
 using MTWireGuard.Application.Models;
@@ -16,16 +15,14 @@ namespace MTWireGuard.Application.Services
     {
         private readonly IMapper mapper;
         private readonly DBContext dbContext;
-        private readonly IMemoryCache memoryCache;
         private readonly APIWrapper wrapper;
         private readonly ILogger logger;
         private readonly string MT_IP, MT_USER, MT_PASS;
         private bool disposed = false;
-        public MTAPI(IMapper mapper, DBContext dbContext, IMemoryCache memoryCache, ILogger logger)
+        public MTAPI(IMapper mapper, DBContext dbContext, ILogger logger)
         {
             this.mapper = mapper;
             this.dbContext = dbContext;
-            this.memoryCache = memoryCache;
             this.logger = logger;
 
             MT_IP = Environment.GetEnvironmentVariable("MT_IP");
@@ -50,9 +47,16 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetServer(Name);
             return mapper.Map<WGServerViewModel>(model);
         }
-        public async Task<List<ServerTrafficViewModel>> GetServersTraffic() {
+        public async Task<List<ServerTrafficViewModel>> GetServersTraffic()
+        {
             var model = await wrapper.GetServersTraffic();
             return mapper.Map<List<ServerTrafficViewModel>>(model);
+        }
+        public async Task<(uint, uint)> GetServersCount()
+        {
+            var total = await wrapper.GetServersCount();
+            var running = await wrapper.GetServersCount(true);
+            return (total, running);
         }
         public async Task<List<WGPeerViewModel>> GetUsersAsync()
         {
@@ -72,6 +76,11 @@ namespace MTWireGuard.Application.Services
             if (input == null) return "never";
             var ts = Helper.ConvertToTimeSpan(input);
             return ts.ToString();
+        }
+        public async Task<List<WGPeerLastHandshake>> GetUsersHandshakes()
+        {
+            var model = await wrapper.GetUsersWithHandshake();
+            return mapper.Map<List<WGPeerLastHandshake>>(model);
         }
         public async Task<string> GetUserTunnelConfig(int id)
         {
@@ -128,7 +137,7 @@ namespace MTWireGuard.Application.Services
                 }
                 throw new($"[{model.Error}] Login failed, {model.Message}.<br>Enter router username/password in environment variables (MT_USER/MT_PASS).");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new($"Login failed, {ex.Message}");
             }
@@ -419,7 +428,7 @@ namespace MTWireGuard.Application.Services
                         {
                             Id = serverIP.Find(ip => ip.Interface == server.Name).Id,
                             Address = server.IPAddress
-                        }) : 
+                        }) :
                         await wrapper.CreateIPAddress(new()
                         {
                             Address = server.IPAddress,
@@ -497,7 +506,7 @@ namespace MTWireGuard.Application.Services
             });
             return mapper.Map<CreationResult>(enable);
         }
-        
+
         public async Task<CreationResult> DeleteServer(int id)
         {
             var delete = await wrapper.DeleteServer(Helper.ParseEntityID(id));
@@ -557,6 +566,12 @@ namespace MTWireGuard.Application.Services
             return mapper.Map<List<SchedulerViewModel>>(model);
         }
 
+        public async Task<SchedulerViewModel> GetScheduler(int id)
+        {
+            var model = await wrapper.GetScheduler(Helper.ParseEntityID(id));
+            return mapper.Map<SchedulerViewModel>(model);
+        }
+
         public async Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler)
         {
             var sched = mapper.Map<MikrotikAPI.Models.SchedulerCreateModel>(scheduler);
@@ -578,7 +593,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> SetDNS(DNSUpdateModel dns)
         {
-            var mtDNS= mapper.Map<MikrotikAPI.Models.MTDNSUpdateModel>(dns);
+            var mtDNS = mapper.Map<MikrotikAPI.Models.MTDNSUpdateModel>(dns);
             var model = await wrapper.SetDNS(mtDNS);
             return mapper.Map<CreationResult>(model);
         }
@@ -652,7 +667,6 @@ namespace MTWireGuard.Application.Services
             if (disposing)
             {
                 dbContext.Dispose();
-                memoryCache.Dispose();
             }
 
             disposed = true;

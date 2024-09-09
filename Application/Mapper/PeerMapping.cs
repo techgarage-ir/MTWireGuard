@@ -2,30 +2,37 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using MikrotikAPI.Models;
-using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
+using Serilog;
 
 namespace MTWireGuard.Application.Mapper
 {
     public class PeerMapping : Profile
     {
         private readonly IServiceProvider _provider;
-        //private readonly IMemoryCache _cache;
+        private ILogger _logger;
+        private IMemoryCache _memoryCache;
+        private DBContext _db;
+        private Dictionary<int, WGPeerDBModel> _userCache;
+        private Dictionary<string, WGPeerLastHandshake> _handshakeCache;
+        private Dictionary<int, SchedulerViewModel> _schedulerCache;
         private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
 
-        public PeerMapping(IServiceProvider provider/*, IMemoryCache memoryCache*/)
+        public PeerMapping(IServiceProvider provider)
         {
             _provider = provider;
-            //_cache = memoryCache;
+            Init();
             /*
              * Mikrotik Peer to ViewModel
             */
             CreateMap<WGPeer, WGPeerViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Convert.ToInt32(src.Id.Substring(1), 16)))
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.AllowedAddress,
                     opt => opt.MapFrom(src => src.AllowedAddress))
+                .ForMember(dest => dest.AllowedIPs,
+                    opt => opt.MapFrom(src => GetPeerAllowedIPs(src)))
                 .ForMember(dest => dest.CurrentAddress,
                     opt => opt.MapFrom(src => $"{src.CurrentEndpointAddress}:{src.CurrentEndpointPort}"))
                 .ForMember(dest => dest.IsEnabled,
@@ -74,15 +81,56 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)));
             CreateMap<UserUpdateModel, WGPeerDBModel>();
         }
-        private async Task<string> GetPeerExpire(WGPeer source)
+
+        private void Init()
         {
-            var db = Provider.GetService<DBContext>();
-            var api = Provider.GetService<IMikrotikRepository>();
-            var schedulers = await api.GetSchedulers();
-            var dbuser = db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id));
-            if (dbuser == null || dbuser.ExpireID == 0) return string.Empty;
-            var expire = schedulers.Find(s => s.Id == dbuser.ExpireID); // User parser for sched id
-            return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
+            _db = Provider.GetService<DBContext>();
+            _logger = Provider.GetService<ILogger>();
+            _memoryCache = Provider.GetService<IMemoryCache>();
+            UpdateCache();
+        }
+
+        private void UpdateCache()
+        {
+            _userCache = _memoryCache.GetOrCreate(
+                "DBUsers",
+                cacheEntry =>
+                {
+                    cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                    return _db.Users.ToDictionary(u => u.Id);
+                });
+        }
+
+        private WGPeerDBModel GetDBUser(WGPeer source)
+        {
+            int id = Helper.ParseEntityID(source.Id);
+            UpdateCache();
+            _userCache.TryGetValue(id, out var user);
+            return user;
+        }
+
+        private string GetPeerExpire(WGPeer source)
+        {
+            try
+            {
+                var dbuser = GetDBUser(source);
+                if (dbuser == null || dbuser.ExpireID == 0) return string.Empty;
+                var api = Provider.GetService<IMikrotikRepository>();
+                _schedulerCache = _memoryCache.GetOrCreate(
+                    "Schedulers",
+                    cacheEntry =>
+                    {
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        return api.GetSchedulers().Result.ToDictionary(s => s.Id);
+                    });
+                _schedulerCache.TryGetValue((int)dbuser.ExpireID, out var expire);
+                return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Mapping Expire");
+                return string.Empty;
+            }
         }
 
         private string GetPeerLastHandshake(WGPeer source)
@@ -90,58 +138,61 @@ namespace MTWireGuard.Application.Mapper
             try
             {
                 var api = Provider.GetService<IMikrotikRepository>();
-                var lastHandshake = api.GetUserHandshake(source.Id).Result;
-                return lastHandshake;
+                _handshakeCache = _memoryCache.GetOrCreate(
+                    "Handshakes",
+                    cacheEntry =>
+                    {
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                        return api.GetUsersHandshakes().Result.ToDictionary(u => u.Id);
+                    });
+                var handshake = _handshakeCache.TryGetValue(source.Id, out var lastHandshake);
+                return lastHandshake?.LastHandshake ?? "Unknown";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.Error(ex, "Handle Peer LastHandshake New");
                 return "Unknown";
             }
         }
 
         private bool GetPeerInheritDNS(WGPeer source)
         {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) && db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).InheritDNS;
+            var user = GetDBUser(source);
+            return user?.InheritDNS ?? false;
         }
 
         private bool GetPeerInheritIP(WGPeer source)
         {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) && db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).InheritIP;
+            return (GetDBUser(source) != null) && GetDBUser(source).InheritIP;
         }
 
         private ulong GetPeerTrafficUsage(WGPeer source)
         {
-            var db = Provider.GetService<DBContext>();
-            var dbItem = db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id));
+            var dbItem = GetDBUser(source);
             return dbItem != null ? dbItem.RX + dbItem.TX : 0;
         }
 
         private int GetPeerTraffic(WGPeer source)
         {
-            var db = Provider.GetService<DBContext>();
-            return (db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)) != null) ? db.Users.ToList().Find(u => u.Id == Helper.ParseEntityID(source.Id)).TrafficLimit : 0;
+            return (GetDBUser(source) != null) ? GetDBUser(source).TrafficLimit : 0;
+        }
+
+        private string GetPeerAllowedIPs(WGPeer source)
+        {
+            return (GetDBUser(source) != null) ? GetDBUser(source).AllowedIPs : "0.0.0.0/0";
         }
 
         private string ExpireDateToString(WGPeer source)
         {
-            var expireDate = GetPeerExpire(source).Result;
+            var expireDate = GetPeerExpire(source);
             return !string.IsNullOrWhiteSpace(expireDate) ? expireDate : "Unlimited";
-        }
-
-        private DateTime ExpireStringToDate(string expire)
-        {
-            return expire == "Unlimited" ? new() : Convert.ToDateTime(expire);
         }
 
         private bool HasDifferences(WGPeer source)
         {
-            var db = Provider.GetService<DBContext>();
             var id = Helper.ParseEntityID(source.Id);
-            var dbUser = db.Users.ToList().Find(x => x.Id == id);
-            var dbTraffic = db.LastKnownTraffic.ToList().Find(x => x.UserID == id);
+            var dbUser = GetDBUser(source);
+            var dbTraffic = _db.LastKnownTraffic.Where(x => x.UserID == id).FirstOrDefault();
             return dbUser == null || dbTraffic == null || source.PrivateKey.Length < 5;
         }
     }

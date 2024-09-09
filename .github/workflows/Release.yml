@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push Docker image
+        env:
+          TAG_NAME: ${{ github.ref }}
+        run: |
+          IMAGE_NAME="techgarageir/mtwireguard" 
+          GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/mtwireguard"
+          docker buildx build \
+            --platform linux/${{ matrix.arch }} \
+            -t $IMAGE_NAME:${TAG_NAME} \
+            -t $IMAGE_NAME:test \
+            -t $GHCR_IMAGE_NAME:${TAG_NAME} \
+            -t $GHCR_IMAGE_NAME:test \
+            --push .

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS publish
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS publish
 WORKDIR /src
 
 # Copy project files
@@ -9,7 +9,7 @@ COPY MikrotikAPI/*.csproj ./MikrotikAPI/
 COPY Serilog.Ui.SqliteProvider/*.csproj ./Serilog.Ui.SqliteProvider/
 
 # Restore packages
-RUN dotnet restore
+RUN dotnet restore --runtime linux-$BUILDARCH
 
 # Copy other files
 COPY UI/. ./UI/
@@ -21,6 +21,7 @@ COPY Serilog.Ui.SqliteProvider/. ./Serilog.Ui.SqliteProvider/
 RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   -o /app/publish \
   --no-restore \
+  --runtime linux-$BUILDARCH \
   --self-contained true \
   /p:WarningLevel=0 \
   /p:PublishTrimmed=true

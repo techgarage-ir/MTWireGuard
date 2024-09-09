@@ -1,0 +1,56 @@
+﻿/* Hide the default checkbox */
+.checkbox-terminal {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 28px; /* Reduce width */
+    height: 28px; /* Reduce height */
+    border: 1px solid #333;
+    border-radius: 4px; /* Slightly rounded corners */
+    background-color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+    /* Styling when the checkbox is checked */
+    .checkbox-terminal:checked {
+        background-color: #333;
+        border-color: #02b875;
+        color: #02b875;
+    }
+
+        .checkbox-terminal:checked::before {
+            content: ">";
+        }
+
+        .checkbox-terminal:checked::after {
+            content: "_";
+            animation: blink 1s step-start infinite; /* Quicker, smoother animation */
+            margin-left: 0; /* Adjust spacing for alignment */
+        }
+
+/* Blink animation for the underscore */
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Align the checkbox and text */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+}
+
+    .checkbox-container label {
+        margin-left: 8px; /* Adjust margin for better spacing */
+        font-family: Arial, sans-serif;
+        cursor: pointer;
+        font-size: 14px; /* Slightly smaller text */
+    }

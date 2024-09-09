@@ -16,10 +16,15 @@ $("#loginForm").on("submit", function (event) {
     let username = $('#loginName').val(),
         password = $('#loginPassword').val();
     if (isAdmin) {
-        let login = api.auth.login(username, password).catch(err => {
-            console.error(err);
-            $('#loginAlert').show();
-        });
+        api.auth.login(username, password)
+            .then((status) => {
+                if (!status) {
+                    $('#loginAlert').show();
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+            });
     } else {
         fetch('/Client', {
             method: 'POST',
@@ -36,8 +41,6 @@ $("#loginForm").on("submit", function (event) {
             } else {
                 window.location.href = "/Client";
             }
-            /*console.error(`Error: ${response.status}`, `Message: ${response.text()}`);
-            return false;*/
         }).catch((err) => {
             console.log(err);
             throw err;

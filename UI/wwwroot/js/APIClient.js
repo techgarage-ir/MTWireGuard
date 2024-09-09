@@ -32,7 +32,7 @@ class APIClient {
 
     auth = {
         login: async (username, password) => {
-            fetch(this.endpoints.auth.Login(), {
+            return fetch(this.endpoints.auth.Login(), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

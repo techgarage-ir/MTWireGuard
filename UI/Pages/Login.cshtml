@@ -30,6 +30,8 @@
 
     <!-- Template Stylesheet -->
     <link href="assets/css/core.css" rel="stylesheet">
+    <link href="css/vendors/terminal-checkbox.css" rel="stylesheet">
+
     <style>
         body {
             background-image: url(img/background.jpg);
@@ -86,9 +88,10 @@
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#ForgotModal">Forgot Password</a>
                                 </div>
                                 <div class="input-group align-items-center mb-3">
-                                    <i class="bx bx-sm bx-terminal color-green mx-2"></i>
-                                    <input class="mt-0 me-1" type="checkbox" id="isAdmin" name="isAdmin" aria-label="Login as system admin">
-                                    <label class="form-check-label" for="isAdmin">Login as system admin</label>
+                                    <div class="checkbox-container">
+										<input type="checkbox" class="checkbox-terminal mt-0 me-1" id="isAdmin" name="isAdmin" aria-label="Login as system admin">
+                                        <label class="form-check-label" for="isAdmin">Login as system admin</label>
+                                    </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary text-uppercase py-3 w-100 mb-4">Sign in</button>
                                 <p class="text-center mb-0">Don't have an Account? <a asp-page="Signup">Sign Up</a></p>

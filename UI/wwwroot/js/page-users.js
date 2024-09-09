@@ -513,6 +513,8 @@ $(function() {
   toggleDynamicInput($('#edit-dns-dynamic'), $('#edit-dns-address'));
   toggleDynamicInput($('#add-ip-dynamic'), $('#add-ip-address'));
   toggleDynamicInput($('#edit-ip-dynamic'), $('#edit-ip-address'));
+  toggleDynamicInput($('#add-allowed-address-dynamic'), $('#add-allowed-address'));
+  toggleDynamicInput($('#edit-allowed-address-dynamic'), $('#edit-allowed-address'));
   
   // FormValidation
 
@@ -538,6 +540,8 @@ $(function() {
       inheritIP: data.get('InheritIP') == 'on',
       IPAddress: data.get('IPAddress'),
       allowedAddress: data.get('AllowedAddress') || null,
+      inheritAllowedAddress: data.get('DynamicAllowedAddress') == 'on',
+      allowedIPs: data.get('AllowedIPs') || null,
       endpointAddress: data.get('Endpoint'),
       endpointPort: data.get('EndpointPort') || null,
       keepalive: data.get('KeepAlive') || null,
@@ -573,6 +577,8 @@ $(function() {
       inheritIP: data.get('InheritIP') == 'on',
       ipAddress: data.get('IPAddress') || null,
       allowedAddress: data.get('AllowedAddress') || null,
+      inheritAllowedAddress: data.get('DynamicAllowedAddress') == 'on',
+      allowedIPs: data.get('AllowedIPs') || null,
       endpointAddress: data.get('Endpoint') || null,
       endpointPort: data.get('EndpointPort') || null,
       keepalive: data.get('KeepAlive') || null,

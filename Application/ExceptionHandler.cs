@@ -1,14 +1,5 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MTWireGuard.Application
 {
@@ -24,16 +15,25 @@ namespace MTWireGuard.Application
                 string exceptionType = exception.GetType().Name,
                     message = exception.Message,
                     stackTrace = exception.StackTrace,
-                    //details = JsonConvert.SerializeObject(exception)!;
-                    details = exception.Source;
+                    source = exception.Source;
+                string? innerExceptionMessage = exception.InnerException?.Message,
+                    innerExceptionStackTrace = exception.InnerException?.StackTrace,
+                    innerExceptionSource     = exception.InnerException?.Source;
 
                 ExceptionHandlerContext.Message = message;
                 ExceptionHandlerContext.StackTrace = stackTrace;
-                ExceptionHandlerContext.Details = details;
+                ExceptionHandlerContext.Details = source;
 
                 if (SetupValidator.IsValid)
                 {
-                    logger.Error(exception, "Unhandled error");
+                    if (exception.InnerException == null)
+                    {
+                        logger.Error("{Exception}", exception);
+                    }
+                    else
+                    {
+                        logger.Error("{Exception}, {InnerException}", exception, exception.InnerException);
+                    }
                 }
                 else
                 {

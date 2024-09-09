@@ -27,11 +27,14 @@ namespace MTWireGuard.Pages
         public async Task<IActionResult> OnPostAsync([FromBody] LoginRequest login)
         {
             var users = await api.GetUsersAsync();
-            var user = users.Find(x => x.Name.Equals(login.Username, StringComparison.CurrentCultureIgnoreCase));
-            if (user != null)
+            if (users != null)
             {
-                HttpContext.Session.Set("user", user);
-                return Page();
+                var user = users.Find(x => x.Name.Equals(login.Username, StringComparison.CurrentCultureIgnoreCase));
+                if (user != null)
+                {
+                    HttpContext.Session.Set("user", user);
+                    return Page();
+                }
             }
             return Unauthorized();
         }

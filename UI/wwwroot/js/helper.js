@@ -57,28 +57,18 @@ function convertByteSize(value, decimalPlaces = 2) {
 }
 
 function getIPInfo(ipAddress) {
-  const url = 'https://ipinfo.techgarage.ir/get_info';
+  const url = './api/iplookup';
 
   const request = new XMLHttpRequest();
-  request.open('POST', url, false);
-
-  let formData = new FormData();
-  formData.append("ip", ipAddress);
-  formData.append("ipv", "4");
-  formData.append("source", "ipregistry");
+  request.open('GET', url, false);
   
-  request.send(formData);
+  request.send();
 
   if (request.status !== 200) {
     console.error('Failed to fetch data');
     return null;
   }
 
-  const data = JSON.parse(request.responseText).ipregistry;
-  data.country = data.country ? formatCountryName(data.country) : "N/A";
+  const data = JSON.parse(request.responseText);
   return data;
-}
-
-function formatCountryName(country) {
-  return country.length <= 4 ? country.toUpperCase() : country;
 }

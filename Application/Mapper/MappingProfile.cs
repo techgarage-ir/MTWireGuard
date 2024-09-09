@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using MTWireGuard.Application.MinimalAPI;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Requests;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -111,7 +108,6 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.IsValid,
                     opt => opt.MapFrom(src => !src.Invalid))
                 .ForMember(dest => dest.LastStarted,
-                    // opt => opt.MapFrom(src => DateTime.ParseExact(src.LastStarted, "MMM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)))
                     opt => opt.MapFrom(src => ConvertToDateTime(src.LastStarted)))
                 .ForMember(dest => dest.Policies,
                     opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()));
@@ -184,6 +180,18 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => src.RX))
                 .ForMember(dest => dest.TX,
                     opt => opt.MapFrom(src => src.TX));
+
+            // IPLookup API
+            CreateMap<IPAPIResponse, IPLookup>()
+                .ForMember(dest => dest.Country,
+                    opt => opt.MapFrom(src => src.Country))
+                .ForMember(dest => dest.ISP,
+                    opt => opt.MapFrom(src => src.ISP ?? src.ORG ?? "N/A"));
+            CreateMap<IPAPIFailResponse, IPLookup>()
+                .ForMember(dest => dest.Country,
+                    opt => opt.MapFrom(src => "N/A"))
+                .ForMember(dest => dest.ISP,
+                    opt => opt.MapFrom(src => ParseISP(src)));
         }
 
         private static List<string> FormatTopics(string topics)
@@ -296,6 +304,15 @@ namespace MTWireGuard.Application.Mapper
         private static string TimeToString(TimeSpan? time)
         {
             return time.HasValue ? time.Value.ToString(@"hh\:mm\:ss") : string.Empty;
+        }
+
+        private static string ParseISP(IPAPIFailResponse response)
+        {
+            return response.Message switch
+            {
+                "private range" => "Private Range",
+                _ => "N/A",
+            };
         }
     }
 }

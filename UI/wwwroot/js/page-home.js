@@ -100,8 +100,8 @@ $(function() {
           api.config.information.get().then(info => {
             let regexParentheses = /\(([^)]+)\)/;
             let ipInfo = getIPInfo(info.ip);
-            let isp = (ipInfo.org ?? ipInfo.isp) ?? `N/A`;
-            let countryBadge = ipInfo ? `${ipInfo.country} - ${isp}` : `N/A`;
+            let isp = ipInfo.isp;
+            let countryBadge = `${ipInfo.country} - ${isp}`;
             $('#info-identity').text(info.identity);
             $('#info-device').html(`${info.device.boardName} <span class="badge border border-purple color-purple p-1">${info.device.architecture}</span>`);
             $('#info-version').html(`${info.version.split(' ')[0]} <span class="badge border border-yellow color-yellow p-1">${regexParentheses.exec(info.version)[1]}</span>`);
@@ -133,24 +133,10 @@ $(function() {
     let updateStatus = document.getElementById('updateStatus');
     let updateSpinner = document.getElementById('updateSpinner');
     updateModal.addEventListener('show.bs.modal', event => {
-        const repoOwner = 'techgarage-ir';
-        const repoName = 'MTWireGuard';
-        const currentVersion = '2.0.3.0';
-
-        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/tags`;
-        fetch(apiUrl)
-            .then(response => response.json())
+        fetch('./api/checkupdates')
+            .then(response => response.text())
             .then(data => {
-                const latestStableVersion = findLatestStableVersion(data);
-                let message = '';
-                console.log('Latest stable version:', latestStableVersion, 'Current version:', currentVersion);
-
-                if (isNewerVersion(latestStableVersion, currentVersion)) {
-                    message = 'There is a newer version available!';
-                } else {
-                    message = 'You are up to date!';
-                }
-                updateStatus.innerText = message;
+                updateStatus.innerText = data;
                 updateStatus.classList.add('d-block');
                 updateStatus.classList.remove('d-none');
                 updateSpinner.classList.add('d-none');
@@ -165,22 +151,4 @@ $(function() {
         updateSpinner.classList.remove('d-none');
         updateSpinner.classList.add('d-flex');
     });
-
-    function findLatestStableVersion(tags) {
-        for (let tag of tags) {
-            const tagName = tag.name;
-            if (!tagName.includes('preview') && !tagName.includes('alpha') && !tagName.includes('beta')) {
-                return tagName;
-            }
-        }
-        // If no stable version is found, return the latest tag
-        return tags[0].name;
-    }
-
-    function isNewerVersion(newVersion, oldVersion) {
-        const versionComparison = (a, b) =>
-            a.split('.').map(Number).reduce((acc, cur, i) => acc || cur - Number(b.split('.')[i]), 0);
-
-        return versionComparison(newVersion.substring(1), oldVersion.substring(1)) > 0;
-    }
 });

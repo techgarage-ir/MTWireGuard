@@ -1,27 +1,15 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using MikrotikAPI;
 using MTWireGuard.Application.Models;
-using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema;
+using Newtonsoft.Json.Schema.Generation;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -31,6 +19,10 @@ namespace MTWireGuard.Application.MinimalAPI
         {
             // Retreive updates from Mikrotik
             group.MapPost(Endpoints.Usage, TrafficUsageUpdate);
+            group.MapGet(Endpoints.IPLookup, IPLookup)
+                .RequireAuthorization();
+            group.MapGet(Endpoints.CheckUpdate, CheckForUpdates)
+                .RequireAuthorization();
             // Map auth endpoints
             group.MapGroup(Endpoints.Auth)
                 .MapAuthAPI();
@@ -133,8 +125,71 @@ namespace MTWireGuard.Application.MinimalAPI
 
             return TypedResults.Accepted("Done");
         }
-    }
 
+        /// <summary>
+        /// Retrieve IP Geo info
+        /// </summary>
+        public static async Task<Ok<IPLookup>> IPLookup(
+            [FromServices] Serilog.ILogger logger,
+            [FromServices] IMapper mapper,
+            HttpContext context)
+        {
+            string? ip = Environment.GetEnvironmentVariable("MT_PUBLIC_IP");
+            if (string.IsNullOrEmpty(ip))
+            {
+                logger.Error("MT_PUBLIC_IP is not set.");
+                return TypedResults.Ok(new IPLookup());
+            }
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync($"http://ip-api.com/json/{ip}?fields=50689");
+            var result = await response.Content.ReadAsStringAsync();
+            JObject json = JObject.Parse(result);
+            JSchema schema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
+            var info = json.IsValid(schema) ? mapper.Map<IPLookup>(result.ToModel<IPAPIResponse>()) : mapper.Map<IPLookup>(result.ToModel<IPAPIFailResponse>());
+            return TypedResults.Ok(info);
+        }
+
+        /// <summary>
+        /// Check for available updates
+        /// </summary>
+        public static async Task<string> CheckForUpdates(
+            [FromServices] Serilog.ILogger logger)
+        {
+            try
+            {
+                var url = "https://api.github.com/repos/techgarage-ir/MTWireguard/tags";
+                var currentVersionString = Helper.GetProjectVersion();
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", $"MTWireguard ${currentVersionString}");
+                var response = await httpClient.GetAsync(url);
+                var json = await response.Content.ReadAsStringAsync();
+                JArray tags = JArray.Parse(json);
+                var latestTag = tags.FirstOrDefault();
+                if (latestTag != null)
+                {
+                    var latestVersionString = latestTag["name"].Value<string>();
+                    Version latestVersion = new(latestVersionString[1..]);
+                    Version currentVersion = new(currentVersionString);
+
+                    switch (currentVersion)
+                    {
+                        case Version expression when currentVersion < latestVersion:
+                            return $"New version ({latestVersionString}) available.";
+                        case Version expression when currentVersion == latestVersion:
+                            return "You are using latest version.";
+                        default:
+                            logger.Error($"Invalid version detected! Using version: {currentVersionString} while the latest known version is: {latestVersionString}.");
+                            return "Invalid version number!";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Error checking for updates!");
+            }
+            return "ERROR checking for new version!";
+        }
+    }
     internal static class Endpoints
     {
         // Groups
@@ -161,5 +216,7 @@ namespace MTWireGuard.Application.MinimalAPI
         public const string Information = "/Information";
         //  Retrival
         public const string Usage = "/Usage";
+        public const string IPLookup = "/IPLookup";
+        public const string CheckUpdate = "/CheckUpdates";
     }
 }

@@ -40,6 +40,22 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_PAT }}
 
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Set Runtime Identifier
+        id: set_rid
+        run: |
+          if [[ "$RUNNER_ARCH" == "X64" ]]; then echo "linux-x64" >> $GITHUB_ENV; else echo "linux-arm64" >> $GITHUB_ENV; fi
+
+      - name: Restore Dependencies
+        run: dotnet restore --runtime ${{ env.RID }}
+
+      - name: Build and Publish
+        run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore --self-contained true
+
       - name: Build and push Docker images
         uses: docker/build-push-action@v6
         env:

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       logLevel:
-        description: 'Log level'     
+        description: 'Log level'
         required: true
         default: 'warning'
       tag:
@@ -60,32 +60,31 @@ jobs:
 
       - name: Build and Publish
         run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore
-      
-      - name: List Directory
+
+      - name: Define Tags
+        id: define-tags
         run: |
-          ls -la
-          ls -la publish
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "tags=techgarageir/mtwireguard:${{ github.ref_name }}, techgarageir/mtwireguard:latest, ghcr.io/${{ github.repository_owner }}/mtwireguard:${{ github.ref_name }}, ghcr.io/${{ github.repository_owner }}/mtwireguard:latest" >> $GITHUB_ENV
+          else
+            echo "tags=techgarageir/mtwireguard:${{ github.event.inputs.tag }}, ghcr.io/${{ github.repository_owner }}/mtwireguard:${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          fi
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v6
         env:
-          TAG_NAME: ${{ github.ref_name }}
-          IMAGE_NAME: "techgarageir/mtwireguard" 
+          IMAGE_NAME: "techgarageir/mtwireguard"
           GHCR_IMAGE_NAME: "ghcr.io/${{ github.repository_owner }}/mtwireguard"
         with:
           platforms: linux/amd64,linux/arm64
           context: .
           file: ./Dockerfile
           push: true
-          tags: >
-            ${{
-              github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-              ? format('{0}:{1}, {0}:latest, {2}:{1}, {2}:latest', env.IMAGE_NAME, github.ref_name, env.GHCR_IMAGE_NAME)
-              : format('{0}:{1}, {2}:{1}', env.IMAGE_NAME, github.event.inputs.tag, env.GHCR_IMAGE_NAME)
-            }}
+          tags: ${{ env.tags }}
 
       - name: Debug Output
         run: |
           echo "Event Name: ${{ github.event_name }}"
           echo "Ref Name: ${{ github.ref_name }}"
           echo "Tag Input: ${{ github.event.inputs.tag }}"
+          echo "Defined Tags: ${{ env.tags }}"

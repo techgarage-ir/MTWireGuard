@@ -78,8 +78,14 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: >
-            ${{ 
+            ${{
               github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
               ? format('{0}:{1}, {0}:latest, {2}:{1}, {2}:latest', env.IMAGE_NAME, github.ref_name, env.GHCR_IMAGE_NAME)
-              : format('{0}:{1}, {2}:{1}', env.IMAGE_NAME, github.event.inputs.tag, env.GHCR_IMAGE_NAME) 
+              : format('{0}:{1}, {2}:{1}', env.IMAGE_NAME, github.event.inputs.tag, env.GHCR_IMAGE_NAME)
             }}
+
+      - name: Debug Output
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Ref Name: ${{ github.ref_name }}"
+          echo "Tag Input: ${{ github.event.inputs.tag }}"

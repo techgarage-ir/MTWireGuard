@@ -48,7 +48,11 @@ jobs:
       - name: Set Runtime Identifier
         id: set_rid
         run: |
-          if [[ "$RUNNER_ARCH" == "X64" ]]; then echo "linux-x64" >> $GITHUB_ENV; else echo "linux-arm64" >> $GITHUB_ENV; fi
+          if [[ "$RUNNER_ARCH" == "X64" ]]; then
+            echo "RID=linux-x64" >> $GITHUB_ENV
+          else
+            echo "RID=linux-arm64" >> $GITHUB_ENV
+          fi
 
       - name: Restore Dependencies
         run: dotnet restore --runtime ${{ env.RID }}

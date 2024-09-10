@@ -16,9 +16,6 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
 
     steps:
       - name: Checkout code
@@ -43,16 +40,15 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v6
         env:
           TAG_NAME: ${{ github.ref_name }}
-        run: |
-          IMAGE_NAME="techgarageir/mtwireguard" 
-          GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/mtwireguard"
-          docker buildx build \
-            --platform linux/${{ matrix.arch }} \
-            -t $IMAGE_NAME:${TAG_NAME} \
-            -t $IMAGE_NAME:test \
-            -t $GHCR_IMAGE_NAME:${TAG_NAME} \
-            -t $GHCR_IMAGE_NAME:test \
-            --push .
+          IMAGE_NAME: "techgarageir/mtwireguard" 
+          GHCR_IMAGE_NAME: "ghcr.io/${{ github.repository_owner }}/mtwireguard"
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${IMAGE_NAME}:test
+            ${GHCR_IMAGE_NAME}:test

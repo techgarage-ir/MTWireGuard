@@ -77,7 +77,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
+          tags: >
             ${{ 
               github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
               ? format('{0}:{1}, {0}:latest, {2}:{1}, {2}:latest', env.IMAGE_NAME, github.ref_name, env.GHCR_IMAGE_NAME)

@@ -35,7 +35,7 @@ COPY Serilog.Ui.SqliteProvider/. ./Serilog.Ui.SqliteProvider/
 RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   -o /app/publish \
   --no-restore \
-  --runtime "$RID" \
+  --arch "$RID" \
   --self-contained true \
   /p:WarningLevel=0 \
   /p:PublishTrimmed=true

@@ -7,12 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       logLevel:
-        description: 'Log level'     
+        description: 'Log level'
         required: true
         default: 'warning'
-      tags:
-        description: 'Test scenario tags'  
-
+      tag:
+        required: true
+        description: 'Output image tag'
+        
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -43,12 +44,14 @@ jobs:
       - name: Build and push Docker images
         uses: docker/build-push-action@v6
         env:
-          TAG_NAME: ${{ github.ref_name }}
           IMAGE_NAME: "techgarageir/mtwireguard" 
           GHCR_IMAGE_NAME: "ghcr.io/${{ github.repository_owner }}/mtwireguard"
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            techgarageir/mtwireguard:test
-            ghcr.io/${{ github.repository_owner }}/mtwireguard:test
+          tags: >
+            ${{
+              github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+              ? format('{0}:{1}, {0}:latest, {2}:{1}, {2}:latest', env.IMAGE_NAME, github.ref_name, env.GHCR_IMAGE_NAME)
+              : format('{0}:{1}, {2}:{1}', env.IMAGE_NAME, inputs.tag, env.GHCR_IMAGE_NAME)
+            }}

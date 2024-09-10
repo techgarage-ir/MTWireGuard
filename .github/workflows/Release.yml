@@ -58,7 +58,7 @@ jobs:
         run: dotnet restore --runtime ${{ env.RID }}
 
       - name: Build and Publish
-        run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore --self-contained true
+        run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore
       
       - name: List Directory
         run: |

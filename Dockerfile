@@ -36,7 +36,7 @@ RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   -o /app/publish \
   --no-restore \
   --runtime "$RID" \
-  --self-contained true \
+  --self-contained false \
   /p:WarningLevel=0 \
   /p:PublishTrimmed=true
 

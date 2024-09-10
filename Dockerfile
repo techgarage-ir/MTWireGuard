@@ -41,7 +41,7 @@ RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   /p:PublishTrimmed=true
 
 # Create final image and run project
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble-chiseled-extra AS final
 
 ENV TZ=Asia/Tehran
 WORKDIR /app

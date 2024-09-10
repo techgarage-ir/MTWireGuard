@@ -3,11 +3,17 @@ WORKDIR /src
 
 # Define platform
 ARG TARGETPLATFORM
+ARG RID
+
+# Set the RID based on the TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-    RID=linux-x64 ; \
+      echo "Setting RID for linux/amd64" ; RID=linux-x64 ; \
     elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    RID=linux-arm64 ; \
-    fi
+      echo "Setting RID for linux/arm64" ; RID=linux-arm64 ; \
+    else \
+      echo "Unsupported platform $TARGETPLATFORM" ; exit 1 ; \
+    fi && \
+    echo "Using RID: $RID"
 
 # Copy project files
 COPY *.sln .
@@ -35,7 +41,7 @@ RUN dotnet publish "./UI/MTWireGuard.csproj" -c Release \
   /p:PublishTrimmed=true
 
 # Create final image and run project
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-noble-chiseled-extra AS final
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS final
 
 ENV TZ=Asia/Tehran
 WORKDIR /app

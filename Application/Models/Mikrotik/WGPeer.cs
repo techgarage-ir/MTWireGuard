@@ -35,7 +35,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public bool IsDifferent { get; set; }
         public string Expire { get; set; }
         public int Traffic { get; set; }
-        public uint TrafficUsed { get; set; }
+        public ulong TrafficUsed { get; set; }
         public string LastHandshake { get; set; }
         public string IPAddress { get; set; }
         public string DNSAddress { get; set; }

@@ -94,4 +94,11 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
     }
+
+    public class WGPeerLastHandshakeViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public TimeSpan LastHandshake { get; set; }
+    }
 }

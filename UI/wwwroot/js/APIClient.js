@@ -58,6 +58,8 @@ class APIClient {
 
     users = {
         getAll: () => this.makeRequest(this.endpoints.Users),
+        getOnlines: () => this.makeRequest(this.endpoints.users.Onlines()),
+        getCount: () => this.makeRequest(this.endpoints.users.Count()),
         get: (userId) => this.makeRequest(this.endpoints.users.Single(userId)),
         create: (user) => this.makeRequest(this.endpoints.Users, 'POST', user),
         update: (userId, updatedUser) => this.makeRequest(this.endpoints.users.Single(userId), 'PUT', updatedUser),
@@ -70,6 +72,7 @@ class APIClient {
 
     servers = {
         getAll: () => this.makeRequest(this.endpoints.Servers),
+        getCount: () => this.makeRequest(this.endpoints.servers.Count()),
         get: (serverId) => this.makeRequest(this.endpoints.servers.Single(serverId)),
         create: (server) => this.makeRequest(this.endpoints.Servers, 'POST', server),
         update: (serverId, updatedServer) => this.makeRequest(this.endpoints.servers.Single(serverId), 'PUT', updatedServer),
@@ -127,11 +130,14 @@ class APIClient {
                 Sync: (userId) => { return `${users}/sync/${userId}`; },
                 QR: (userId) => { return `${users}/qr/${userId}`; },
                 Download: (userId) => { return `${users}/file/${userId}`; },
-                Activation: (userId) => { return `${users}/activation/${userId}`; }
+                Activation: (userId) => { return `${users}/activation/${userId}`; },
+                Onlines: () => { return `${users}/onlines` },
+                Count: () => { return `${users}/count` }
             },
             servers: {
                 Single: (serverId) => { return `${servers}/${serverId}`; },
-                Activation: (serverId) => { return `${servers}/activation/${serverId}`; }
+                Activation: (serverId) => { return `${servers}/activation/${serverId}`; },
+                Count: () => { return `${servers}/count` }
             },
             pools: {
                 Single: (poolId) => { return `${pools}/${poolId}`; },

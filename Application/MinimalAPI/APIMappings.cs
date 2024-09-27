@@ -55,8 +55,10 @@ namespace MTWireGuard.Application.MinimalAPI
         {
             group.MapGet("/", UserController.GetAll);
             group.MapGet("/{id}", UserController.GetById);
+            group.MapGet($"{Endpoints.Count}", UserController.GetCount);
             group.MapGet($"{Endpoints.QR}/{{id}}", UserController.GetQR);
             group.MapGet($"{Endpoints.File}/{{id}}", UserController.GetFile);
+            group.MapGet($"{Endpoints.Onlines}", UserController.GetOnlines);
             group.MapPost("/", UserController.Create);
             group.MapPut("/{id}", UserController.Update);
             group.MapPatch($"{Endpoints.Sync}/{{id}}", UserController.Sync);
@@ -68,6 +70,7 @@ namespace MTWireGuard.Application.MinimalAPI
         private static RouteGroupBuilder MapServerApi(this RouteGroupBuilder group)
         {
             group.MapGet("/", ServerController.GetAll);
+            group.MapGet($"{Endpoints.Count}", ServerController.GetCount);
             group.MapPost("/", ServerController.Create);
             group.MapPut("/{id}", ServerController.Update);
             group.MapDelete("/{id}", ServerController.Delete);
@@ -205,9 +208,11 @@ namespace MTWireGuard.Application.MinimalAPI
         public const string Logout = "/Logout";
         //  Users, Servers
         public const string Activation = "/Activation";
+        public const string Count = "/Count";
         public const string File = "/File";
         public const string QR = "/QR";
         public const string Sync = "/Sync";
+        public const string Onlines = "/Onlines";
         //  Configuration
         public const string DNS = "/DNS";
         public const string Identity = "/Identity";

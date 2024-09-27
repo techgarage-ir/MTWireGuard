@@ -52,11 +52,15 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetServersTraffic();
             return mapper.Map<List<ServerTrafficViewModel>>(model);
         }
-        public async Task<(uint, uint)> GetServersCount()
+        public async Task<WGServerStatistics> GetServersCount()
         {
-            var total = await wrapper.GetServersCount();
-            var running = await wrapper.GetServersCount(true);
-            return (total, running);
+            var servers = await wrapper.GetServersAsync();
+            return new()
+            {
+                Total = servers.Count,
+                Active = servers.Count(s => !s.Disabled),
+                Running = servers.Count(s => s.Running)
+            };
         }
         public async Task<List<WGPeerViewModel>> GetUsersAsync()
         {
@@ -77,10 +81,22 @@ namespace MTWireGuard.Application.Services
             var ts = Helper.ConvertToTimeSpan(input);
             return ts.ToString();
         }
-        public async Task<List<WGPeerLastHandshake>> GetUsersHandshakes()
+        public async Task<List<WGPeerLastHandshakeViewModel>> GetUsersHandshakes()
         {
             var model = await wrapper.GetUsersWithHandshake();
-            return mapper.Map<List<WGPeerLastHandshake>>(model);
+            return mapper.Map<List<WGPeerLastHandshakeViewModel>>(model);
+        }
+        public async Task<WGUserStatistics> GetUsersCount()
+        {
+            var users = await wrapper.GetUsersAsync();
+            var runningUsers = await GetUsersHandshakes();
+            var onlines = Helper.FilterOnlineUsers(runningUsers);
+            return new()
+            {
+                Total = users.Count,
+                Active = users.Count(s => !s.Disabled),
+                Online = onlines.Count
+            };
         }
         public async Task<string> GetUserTunnelConfig(int id)
         {

@@ -44,14 +44,13 @@ $(function() {
       var dt_basic = dt_basic_table.DataTable({
         ajax: function(data, callback, settings) {
           settings.sAjaxDataProp = '';
-          api.users.getAll()
+          api.users.getOnlines()
             .then(function(users) {
               let lastOnline = users.filter(u => u.lastHandshake.length == 8).sort((a, b) => {
                 if (a.lastHandshake < b.lastHandshake) {
                   return -1;
                 }
               }).slice(0, 5);
-              setUsersCount(users);
               callback(lastOnline);
             })
             .catch(function(error) {
@@ -109,10 +108,14 @@ $(function() {
             $('#info-dns').text(info.dns.join(' - '));
           });
 
-          api.servers.getAll().then(servers => {
-            let activeServers = servers.filter(s => s.isEnabled === true);
-            $('#servers-total').html(servers.length.toString());
-            $('#servers-active').html(activeServers.length.toString());
+          api.users.getCount().then(users => {
+            $('#users-total').html(users.total);
+            $('#users-online').html(users.online);
+          });
+
+          api.servers.getCount().then(servers => {
+            $('#servers-total').html(servers.total);
+            $('#servers-active').html(servers.active);
           });
         }
       });
@@ -120,13 +123,6 @@ $(function() {
     catch(err) {
       console.error(err);
     }
-  }
-
-  function setUsersCount(users) {
-    let onlineUsers = users.filter(u => u.lastHandshake.length == 8);
-    onlineUsers = onlineUsers.filter(u => new Date(`2000-01-01T${u.lastHandshake}`) < new Date(`2000-01-01T00:03:00`));
-    $('#users-total').html(users.length.toString());
-    $('#users-online').html(onlineUsers.length.toString());
   }
 
     let updateModal = document.getElementById('updateModal');

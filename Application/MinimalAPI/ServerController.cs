@@ -1,17 +1,12 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
-using MTWireGuard.Application.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
 using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
-using MTWireGuard.Application.Models;
+using MTWireGuard.Application.Repositories;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -21,6 +16,12 @@ namespace MTWireGuard.Application.MinimalAPI
         {
             var servers = await API.GetServersAsync();
             return servers.Any() ? TypedResults.Ok(servers) : TypedResults.NotFound();
+        }
+
+        public static async Task<Ok<WGServerStatistics>> GetCount([FromServices] IMikrotikRepository API)
+        {
+            var servers = await API.GetServersCount();
+            return TypedResults.Ok(servers);
         }
 
         public static async Task<Ok<ToastMessage>> Create(

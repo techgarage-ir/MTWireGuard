@@ -88,26 +88,13 @@ namespace MikrotikAPI
             return json.ToModel<WGPeerLastHandshake>();
         }
 
-        public async Task<uint> GetUsersCount()
-        {
-            var json = await SendPostRequestAsync($"{Endpoints.WireguardPeers}/print", "{ \"count-only\" : true }");
-            return json.ToModel<CountOnly>().Ret;
-        }
-
         public async Task<List<WGPeerLastHandshake>> GetUsersWithHandshake()
         {
-            var json = await SendRequestBase(RequestMethod.GET, Endpoints.WireguardPeers + $"?.proplist=last-handshake");
+            var json = await SendRequestBase(RequestMethod.GET, Endpoints.WireguardPeers + $"?.proplist=last-handshake,name");
             var model = json.ToModel<List<WGPeerLastHandshake>>();
             return model
                 .Where(u => !string.IsNullOrWhiteSpace(u.LastHandshake))
                 .ToList();
-        }
-
-        public async Task<uint> GetServersCount(bool FilterRunning = false)
-        {
-            var data = FilterRunning ? "{ \"count-only\" : true, \".query\": [\"running=yes\"] }" : "{ \"count-only\" : true }";
-            var json = await SendPostRequestAsync($"{Endpoints.Wireguard}/print", data);
-            return json.ToModel<CountOnly>().Ret;
         }
 
         public async Task<MTInfo> GetInfo()

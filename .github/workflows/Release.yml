@@ -59,7 +59,7 @@ jobs:
         run: dotnet restore --runtime ${{ env.RID }}
 
       - name: Build and Publish
-        run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore
+        run: dotnet publish ./UI/MTWireGuard.csproj -c Release -o publish --runtime ${{ env.RID }} --no-restore --self-contained true /p:WarningLevel=0 /p:PublishTrimmed=true
 
       - name: Define Tags
         id: define-tags
@@ -76,7 +76,7 @@ jobs:
           IMAGE_NAME: "techgarageir/mtwireguard"
           GHCR_IMAGE_NAME: "ghcr.io/${{ github.repository_owner }}/mtwireguard"
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           context: .
           file: ./Dockerfile
           push: true

@@ -15,7 +15,7 @@ namespace MTWireGuard.Application.Mapper
         private IMemoryCache _memoryCache;
         private DBContext _db;
         private Dictionary<int, WGPeerDBModel> _userCache;
-        private Dictionary<string, WGPeerLastHandshake> _handshakeCache;
+        private Dictionary<int, WGPeerLastHandshakeViewModel> _handshakeCache;
         private Dictionary<int, SchedulerViewModel> _schedulerCache;
         private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
 
@@ -80,11 +80,17 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Id,
                     opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)));
             CreateMap<UserUpdateModel, WGPeerDBModel>();
+
+            // Peer Handshake
+            CreateMap<WGPeerLastHandshake, WGPeerLastHandshakeViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.LastHandshake,
+                    opt => opt.MapFrom(src => Helper.ConvertToTimeSpan(src.LastHandshake)));
         }
 
         private void Init()
         {
-            _db = Provider.GetService<DBContext>();
             _logger = Provider.GetService<ILogger>();
             _memoryCache = Provider.GetService<IMemoryCache>();
             UpdateCache();
@@ -97,6 +103,7 @@ namespace MTWireGuard.Application.Mapper
                 cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                    _db = Provider.GetService<DBContext>();
                     return _db.Users.ToDictionary(u => u.Id);
                 });
         }
@@ -114,17 +121,20 @@ namespace MTWireGuard.Application.Mapper
             try
             {
                 var dbuser = GetDBUser(source);
-                if (dbuser == null || dbuser.ExpireID == 0) return string.Empty;
-                var api = Provider.GetService<IMikrotikRepository>();
+                if (dbuser == null || dbuser.ExpireID == null || dbuser.ExpireID == 0) return string.Empty;
                 _schedulerCache = _memoryCache.GetOrCreate(
                     "Schedulers",
                     cacheEntry =>
                     {
                         cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        var api = Provider.GetService<IMikrotikRepository>();
                         return api.GetSchedulers().Result.ToDictionary(s => s.Id);
                     });
-                _schedulerCache.TryGetValue((int)dbuser.ExpireID, out var expire);
-                return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
+                if (_schedulerCache.TryGetValue((int)dbuser.ExpireID, out var expire))
+                    return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
+                else
+                    _logger.Error("Can't find expiration scheduler for user #{0}: {1}", dbuser.Id, source.Name);
+                return string.Empty;
             }
             catch (Exception ex)
             {
@@ -142,11 +152,11 @@ namespace MTWireGuard.Application.Mapper
                     "Handshakes",
                     cacheEntry =>
                     {
-                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1);
                         return api.GetUsersHandshakes().Result.ToDictionary(u => u.Id);
                     });
-                var handshake = _handshakeCache.TryGetValue(source.Id, out var lastHandshake);
-                return lastHandshake?.LastHandshake ?? "Unknown";
+                _handshakeCache.TryGetValue(Helper.ParseEntityID(source.Id), out var lastHandshake);
+                return lastHandshake?.LastHandshake.ToString() ?? "Unknown";
             }
             catch (Exception ex)
             {

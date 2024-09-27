@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MTWireGuard.Application.Models;
+using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using Serilog;
 using Serilog.Events;
@@ -134,29 +135,6 @@ namespace MTWireGuard.Application
                 }).ToList();
         }
 
-        public static List<UserActivityUpdate> ParseActivityUpdates(string input)
-        {
-            string[] items = input.Split(".id=");
-
-            List<string> objects = items
-                .Where(item => !string.IsNullOrEmpty(item))
-                .Select(item => $"id={item}")
-                .ToList();
-
-            return objects
-                .Select(x => x.Split(';').ToList())
-                .Select(arr =>
-                {
-                    var obj = new UserActivityUpdate();
-                    var id = arr.Find(x => x.Contains("id")).Split('=')[1];
-                    var handshake = arr.Find(x => x.Contains("handshake"))?.Split('=')[1] ?? "Never";
-                    obj.Id = ParseEntityID(id);
-                    obj.LastHandshake = handshake;
-                    return obj;
-                }).ToList();
-        }
-        #endregion
-
         public static async void HandleUserTraffics(List<DataUsage> updates, DBContext dbContext, IMikrotikRepository API, ILogger logger)
         {
             var dataUsages = await dbContext.DataUsages.ToListAsync();
@@ -243,6 +221,9 @@ namespace MTWireGuard.Application
                 }
             }
         }
+        #endregion
+
+        public static List<WGPeerLastHandshakeViewModel> FilterOnlineUsers(List<WGPeerLastHandshakeViewModel> users) => users.Where(u => u.LastHandshake < new TimeSpan(0, 2, 1)).ToList();
 
         public static string GetProjectVersion()
         {

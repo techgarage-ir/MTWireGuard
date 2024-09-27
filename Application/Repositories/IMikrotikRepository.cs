@@ -10,10 +10,12 @@ namespace MTWireGuard.Application.Repositories
         Task<List<WGServerViewModel>> GetServersAsync();
         Task<WGServerViewModel> GetServer(string Name);
         Task<List<ServerTrafficViewModel>> GetServersTraffic();
+        Task<WGServerStatistics> GetServersCount();
         Task<List<WGPeerViewModel>> GetUsersAsync();
         Task<WGPeerViewModel> GetUser(int id);
         Task<string> GetUserHandshake(string id);
-        Task<List<WGPeerLastHandshake>> GetUsersHandshakes();
+        Task<List<WGPeerLastHandshakeViewModel>> GetUsersHandshakes();
+        Task<WGUserStatistics> GetUsersCount();
         Task<string> GetUserTunnelConfig(int id);
         Task<string> GetQRCodeBase64(int id);
         Task<MTInfoViewModel> GetInfo();

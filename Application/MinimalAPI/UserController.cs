@@ -1,18 +1,13 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MTWireGuard.Application.Repositories;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using MTWireGuard.Application.Models.Mikrotik;
-using AutoMapper;
-using MTWireGuard.Application.Models.Requests;
-using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models;
+using MTWireGuard.Application.Models.Mikrotik;
+using MTWireGuard.Application.Models.Models.Responses;
+using MTWireGuard.Application.Models.Requests;
+using MTWireGuard.Application.Repositories;
+using System.Text;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -32,6 +27,19 @@ namespace MTWireGuard.Application.MinimalAPI
             if (user != null)
                 return TypedResults.Ok(user);
             return TypedResults.NotFound();
+        }
+
+        public static async Task<Ok<List<WGPeerLastHandshakeViewModel>>> GetOnlines([FromServices] IMikrotikRepository API)
+        {
+            var users = await API.GetUsersHandshakes();
+            var onlines = Helper.FilterOnlineUsers(users);
+            return TypedResults.Ok(onlines);
+        }
+
+        public static async Task<Ok<WGUserStatistics>> GetCount([FromServices] IMikrotikRepository API)
+        {
+            var users = await API.GetUsersCount();
+            return TypedResults.Ok(users);
         }
 
         public static async Task<Ok<string>> GetQR([FromServices] IMikrotikRepository API, int id)

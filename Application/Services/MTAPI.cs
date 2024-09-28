@@ -553,6 +553,7 @@ namespace MTWireGuard.Application.Services
                     dbContext.Users.Remove(user);
                 }
                 await dbContext.LastKnownTraffic.Where(t => t.UserID == id).ExecuteDeleteAsync();
+                await dbContext.DataUsages.Where(d => d.UserID == id).ExecuteDeleteAsync();
                 await dbContext.SaveChangesAsync();
             }
             return mapper.Map<CreationResult>(delete);

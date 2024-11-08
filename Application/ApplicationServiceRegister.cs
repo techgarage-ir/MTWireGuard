@@ -4,8 +4,9 @@ using MTWireGuard.Application.Mapper;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Services;
 using Serilog;
-using Serilog.Ui.SqliteDataProvider;
-using Serilog.Ui.Web;
+using Serilog.Ui.Core.Extensions;
+using Serilog.Ui.SqliteDataProvider.Extensions;
+using Serilog.Ui.Web.Extensions;
 using System.Reflection;
 
 namespace MTWireGuard.Application
@@ -94,7 +95,13 @@ namespace MTWireGuard.Application
             // Add SerilogUI
             services.AddSerilogUi(options =>
             {
-                options.UseSqliteServer($"Data Source={Helper.GetLogPath("logs.db")}", "Logs");
+                options.UseSqliteServer(setupOptions =>
+                {
+                    setupOptions.WithConnectionString($"Data Source={Helper.GetLogPath("logs.db")}");
+                    setupOptions.WithTable("Logs");
+                });
+
+                options.AddScopedSyncAuthFilter<SerilogUiAuthorizeFilter>();
             });
         }
     }

@@ -14,8 +14,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTWireGuard.Application", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MikrotikAPI", "MikrotikAPI\MikrotikAPI.csproj", "{357EE40B-AA30-482C-94CF-34854BE24D61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.Ui.SqliteProvider", "Serilog.Ui.SqliteProvider\Serilog.Ui.SqliteProvider.csproj", "{4D0ED34E-E84B-4861-82DC-C2149DCD6E14}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +32,6 @@ Global
 		{357EE40B-AA30-482C-94CF-34854BE24D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{357EE40B-AA30-482C-94CF-34854BE24D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{357EE40B-AA30-482C-94CF-34854BE24D61}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D0ED34E-E84B-4861-82DC-C2149DCD6E14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D0ED34E-E84B-4861-82DC-C2149DCD6E14}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D0ED34E-E84B-4861-82DC-C2149DCD6E14}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D0ED34E-E84B-4861-82DC-C2149DCD6E14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

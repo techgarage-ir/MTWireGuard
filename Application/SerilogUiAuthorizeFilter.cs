@@ -1,18 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Serilog.Ui.Web.Authorization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Serilog.Ui.Core.Interfaces;
 
 namespace MTWireGuard.Application
 {
-    public class SerilogUiAuthorizeFilter : IUiAuthorizationFilter
+    public class SerilogUiAuthorizeFilter(IHttpContextAccessor httpContextAccessor) : IUiAuthorizationFilter
     {
-        public bool Authorize(HttpContext httpContext)
+        public bool Authorize()
         {
-            return httpContext.User.Identity is { IsAuthenticated: true };
+            return httpContextAccessor.HttpContext?.User.Identity is { IsAuthenticated: true };
         }
     }
 }

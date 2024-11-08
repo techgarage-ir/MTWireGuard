@@ -1,14 +1,8 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using MTWireGuard.Middlewares;
 using MTWireGuard.Application;
-using Microsoft.Extensions.Caching.Memory;
 using MTWireGuard.Application.MinimalAPI;
+using MTWireGuard.Middlewares;
 using Serilog;
-using Serilog.Exceptions.Core;
-using Serilog.Exceptions;
-using System.Configuration;
-using Serilog.Ui.Web;
-using Serilog.Ui.Web.Authorization;
+using Serilog.Ui.Web.Extensions;
 
 internal class Program
 {
@@ -77,15 +71,11 @@ internal class Program
 
         app.UseSerilogUi(options =>
         {
-            options.RoutePrefix = "Debug";
-            options.InjectStylesheet("/assets/lib/boxicons/css/boxicons.min.css");
-            options.InjectStylesheet("/assets/css/serilogui.css");
+            options.HideSerilogUiBrand();
             options.InjectJavascript("/assets/js/serilogui.js");
-            options.Authorization.AuthenticationType = AuthenticationType.Jwt;
-            options.Authorization.Filters =
-            [
-                new SerilogUiAuthorizeFilter()
-            ];
+            options.WithRoutePrefix("Debug");
+            options.WithAuthenticationType(Serilog.Ui.Web.Models.AuthenticationType.Custom);
+            options.EnableAuthorizationOnAppRoutes();
         });
 
         app.Run();

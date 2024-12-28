@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using MTWireGuard.Application.Repositories;
 using Serilog;
 using System.Net.NetworkInformation;
@@ -118,7 +117,6 @@ namespace MTWireGuard.Application
 
         private void InitializeServices()
         {
-            serviceProvider.GetService<DBContext>().Database.Migrate();
             serviceProvider.GetService<DBContext>().Database.EnsureCreated();
             api = serviceProvider.GetService<IMikrotikRepository>();
             logger = serviceProvider.GetService<ILogger>();

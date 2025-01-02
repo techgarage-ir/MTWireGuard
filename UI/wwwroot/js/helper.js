@@ -44,9 +44,9 @@ function convertByteSize(value, decimalPlaces = 2) {
 
   const sizeSuffixes = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
-  const mag = Math.floor(Math.log(value) / Math.log(1024));
+  let mag = Math.floor(Math.log(value) / Math.log(1024));
 
-  const adjustedSize = value / (1 << (mag * 10));
+  let adjustedSize = value / (1 << (mag * 10));
 
   if (Math.round(adjustedSize, decimalPlaces) >= 1000) {
     mag++;

@@ -10,6 +10,7 @@ using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using Serilog;
+using Serilog.Enrichers.CallerInfo;
 using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -267,8 +268,13 @@ namespace MTWireGuard.Application
         {
             return new LoggerConfiguration()
                 .Enrich.WithExceptionDetails(new DestructuringOptionsBuilder()
-                .WithDefaultDestructurers()
-                .WithRootName("Message").WithRootName("Exception").WithRootName("Exception"))
+                    .WithDefaultDestructurers()
+                    .WithRootName("Message").WithRootName("Exception").WithRootName("Exception"))
+                .Enrich.WithCallerInfo(
+                    includeFileInfo: true,
+                    assemblyPrefix: "MTWireGuard.",
+                    prefix: "Log.Source_",
+                    filePathDepth: 10)
                 .Enrich.WithProperty("App.Version", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0")
                 .Enrich.WithMachineName()
                 .Enrich.WithEnvironmentUserName()

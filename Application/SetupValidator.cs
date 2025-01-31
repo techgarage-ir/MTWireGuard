@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
+using Newtonsoft.Json.Schema.Generation;
 using Serilog;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -62,6 +65,9 @@ namespace MTWireGuard.Application
             }
 
             await EnsureTrafficScripts(ip);
+
+            Constants.IPApiSchema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
+
             IsValid = true;
             return true;
         }
@@ -127,21 +133,6 @@ namespace MTWireGuard.Application
             var scripts = await api.GetScripts();
             var schedulers = await api.GetSchedulers();
 
-            //if (scripts.Find(x => x.Name == "SendTrafficUsage") == null)
-            //{
-            //    var create = await api.CreateScript(new()
-            //    {
-            //        Name = "SendTrafficUsage",
-            //        Policies = ["write", "read", "test", "ftp"],
-            //        DontRequiredPermissions = false,
-            //        Source = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage")
-            //    });
-            //    var result = create.Code;
-            //    logger.Information("Created TrafficUsage Script", new
-            //    {
-            //        result = create
-            //    });
-            //}
             if (schedulers.Find(x => x.Name == "TrafficUsage") == null)
             {
                 var create = await api.CreateScheduler(new()
@@ -149,7 +140,7 @@ namespace MTWireGuard.Application
                     Name = "TrafficUsage",
                     Interval = new TimeSpan(0, 5, 0),
                     //OnEvent = "SendTrafficUsage",
-                    OnEvent = Helper.PeersTrafficUsageScript($"http://{ip}/api/usage"),
+                    OnEvent = Constants.PeersTrafficUsageScript($"http://{ip}/api/usage"),
                     Policies = ["write", "read", "test", "ftp"],
                     Comment = "update wireguard peers traffic usage"
                 });

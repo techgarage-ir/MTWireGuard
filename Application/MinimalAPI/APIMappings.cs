@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Routing;
 using MikrotikAPI;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
-using Newtonsoft.Json.Schema.Generation;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -119,12 +119,12 @@ namespace MTWireGuard.Application.MinimalAPI
             StreamReader reader = new(context.Request.Body);
             string body = await reader.ReadToEndAsync();
 
-            var list = Helper.ParseTrafficUsage(body);
+            var list = TrafficUtil.ParseTrafficUsage(body);
             var updates = mapper.Map<List<DataUsage>>(list);
 
             if (updates == null || updates.Count < 1) return TypedResults.Problem("Empty data");
 
-            Helper.HandleUserTraffics(updates, dbContext, mikrotikRepository, logger);
+            TrafficUtil.HandleUserTraffics(updates, dbContext, mikrotikRepository, logger);
 
             return TypedResults.Accepted("Done");
         }
@@ -147,7 +147,7 @@ namespace MTWireGuard.Application.MinimalAPI
             var response = await httpClient.GetAsync($"http://ip-api.com/json/{ip}?fields=50689");
             var result = await response.Content.ReadAsStringAsync();
             JObject json = JObject.Parse(result);
-            JSchema schema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
+            JSchema schema = Constants.IPApiSchema;
             var info = json.IsValid(schema) ? mapper.Map<IPLookup>(result.ToModel<IPAPIResponse>()) : mapper.Map<IPLookup>(result.ToModel<IPAPIFailResponse>());
             return TypedResults.Ok(info);
         }
@@ -161,7 +161,7 @@ namespace MTWireGuard.Application.MinimalAPI
             try
             {
                 var url = "https://api.github.com/repos/techgarage-ir/MTWireguard/tags";
-                var currentVersionString = Helper.GetProjectVersion();
+                var currentVersionString = CoreUtil.GetProjectVersion();
                 using var httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", $"MTWireguard ${currentVersionString}");
                 var response = await httpClient.GetAsync(url);

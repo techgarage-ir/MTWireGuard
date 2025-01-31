@@ -7,6 +7,7 @@ using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 using System.Text;
 
 namespace MTWireGuard.Application.MinimalAPI
@@ -32,7 +33,7 @@ namespace MTWireGuard.Application.MinimalAPI
         public static async Task<Ok<List<WGPeerLastHandshakeViewModel>>> GetOnlines([FromServices] IMikrotikRepository API)
         {
             var users = await API.GetUsersHandshakes();
-            var onlines = Helper.FilterOnlineUsers(users);
+            var onlines = CoreUtil.FilterOnlineUsers(users);
             return TypedResults.Ok(onlines);
         }
 

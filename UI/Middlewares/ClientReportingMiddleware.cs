@@ -1,5 +1,5 @@
-﻿using MTWireGuard.Application;
-using MTWireGuard.Application.Repositories;
+﻿using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 
 namespace MTWireGuard.Middlewares
 {

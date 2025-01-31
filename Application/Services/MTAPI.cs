@@ -5,6 +5,7 @@ using MikrotikAPI.Models;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 using NetTools;
 using QRCoder;
 using Serilog;
@@ -70,7 +71,7 @@ namespace MTWireGuard.Application.Services
         }
         public async Task<WGPeerViewModel> GetUser(int id)
         {
-            var model = await wrapper.GetUser(Helper.ParseEntityID(id));
+            var model = await wrapper.GetUser(ConverterUtil.ParseEntityID(id));
             return mapper.Map<WGPeerViewModel>(model);
         }
         public async Task<string> GetUserHandshake(string id)
@@ -78,7 +79,7 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetUserHandshake(id);
             string input = model.LastHandshake;
             if (input == null) return "never";
-            var ts = Helper.ConvertToTimeSpan(input);
+            var ts = ConverterUtil.ConvertToTimeSpan(input);
             return ts.ToString();
         }
         public async Task<List<WGPeerLastHandshakeViewModel>> GetUsersHandshakes()
@@ -90,7 +91,7 @@ namespace MTWireGuard.Application.Services
         {
             var users = await wrapper.GetUsersAsync();
             var runningUsers = await GetUsersHandshakes();
-            var onlines = Helper.FilterOnlineUsers(runningUsers);
+            var onlines = CoreUtil.FilterOnlineUsers(runningUsers);
             return new()
             {
                 Total = users.Count,
@@ -196,7 +197,7 @@ namespace MTWireGuard.Application.Services
                 if (addIP.Success)
                 {
                     var item = model.Item as WGServer;
-                    var serverId = Helper.ParseEntityID(item.Id);
+                    var serverId = ConverterUtil.ParseEntityID(item.Id);
                     var mtDNS = (await GetDNS()).Servers;
                     await dbContext.Servers.AddAsync(new()
                     {
@@ -245,12 +246,12 @@ namespace MTWireGuard.Application.Services
             if (model.Success)
             {
                 var item = model.Item as WGPeer;
-                var userID = Helper.ParseEntityID(item.Id);
+                var userID = ConverterUtil.ParseEntityID(item.Id);
                 var deleteScheduler = peer.Expire != new DateTime() && peer.Expire != null ? await CreateScheduler(new()
                 {
                     Name = $"DisableUser{userID}",
                     Policies = ["read", "write", "test", "sensitive"],
-                    OnEvent = Helper.UserExpirationScript(Helper.ParseEntityID(userID)),
+                    OnEvent = Constants.UserExpirationScript(ConverterUtil.ParseEntityID(userID)),
                     StartDate = DateOnly.FromDateTime((DateTime)peer.Expire),
                     StartTime = TimeOnly.FromDateTime((DateTime)peer.Expire),
                     Comment = $"Disable Wireguard Peer: {peer.Name}",
@@ -359,7 +360,7 @@ namespace MTWireGuard.Application.Services
                         {
                             Name = $"DisableUser{user.Id}",
                             Policies = ["read", "write", "test", "sensitive"],
-                            OnEvent = Helper.UserExpirationScript(Helper.ParseEntityID(user.Id)),
+                            OnEvent = Constants.UserExpirationScript(ConverterUtil.ParseEntityID(user.Id)),
                             StartDate = DateOnly.FromDateTime(user.Expire),
                             StartTime = TimeOnly.FromDateTime(user.Expire),
                             Comment = $"Disable Wireguard Peer: {user.Name}",
@@ -419,7 +420,7 @@ namespace MTWireGuard.Application.Services
                 // Remove scheduler if expiration disabled
                 if (schedulerId > 0 && user.Expire == new DateTime())
                 {
-                    await wrapper.DeleteScheduler(Helper.ParseEntityID(schedulerId));
+                    await wrapper.DeleteScheduler(ConverterUtil.ParseEntityID(schedulerId));
                 }
                 await dbContext.SaveChangesAsync();
             }
@@ -487,7 +488,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetServerEnabled(new()
             {
-                ID = Helper.ParseEntityID(id),
+                ID = ConverterUtil.ParseEntityID(id),
                 Disabled = false
             });
             return mapper.Map<CreationResult>(enable);
@@ -497,7 +498,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetServerEnabled(new()
             {
-                ID = Helper.ParseEntityID(id),
+                ID = ConverterUtil.ParseEntityID(id),
                 Disabled = true
             });
             return mapper.Map<CreationResult>(enable);
@@ -507,7 +508,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetUserEnabled(new()
             {
-                ID = Helper.ParseEntityID(id),
+                ID = ConverterUtil.ParseEntityID(id),
                 Disabled = false
             });
             return mapper.Map<CreationResult>(enable);
@@ -517,7 +518,7 @@ namespace MTWireGuard.Application.Services
         {
             var enable = await wrapper.SetUserEnabled(new()
             {
-                ID = Helper.ParseEntityID(id),
+                ID = ConverterUtil.ParseEntityID(id),
                 Disabled = true
             });
             return mapper.Map<CreationResult>(enable);
@@ -525,7 +526,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> DeleteServer(int id)
         {
-            var delete = await wrapper.DeleteServer(Helper.ParseEntityID(id));
+            var delete = await wrapper.DeleteServer(ConverterUtil.ParseEntityID(id));
             if (delete.Success)
             {
                 var server = await dbContext.Servers.FindAsync(id);
@@ -540,7 +541,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> DeleteUser(int id)
         {
-            var delete = await wrapper.DeleteUser(Helper.ParseEntityID(id));
+            var delete = await wrapper.DeleteUser(ConverterUtil.ParseEntityID(id));
             if (delete.Success)
             {
                 var user = await dbContext.Users.FindAsync(id);
@@ -548,7 +549,7 @@ namespace MTWireGuard.Application.Services
                 {
                     if (user.ExpireID != null)
                     {
-                        await wrapper.DeleteScheduler(Helper.ParseEntityID((int)user.ExpireID));
+                        await wrapper.DeleteScheduler(ConverterUtil.ParseEntityID((int)user.ExpireID));
                     }
                     dbContext.Users.Remove(user);
                 }
@@ -585,7 +586,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<SchedulerViewModel> GetScheduler(int id)
         {
-            var model = await wrapper.GetScheduler(Helper.ParseEntityID(id));
+            var model = await wrapper.GetScheduler(ConverterUtil.ParseEntityID(id));
             return mapper.Map<SchedulerViewModel>(model);
         }
 
@@ -637,7 +638,7 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> DeleteIPPool(int id)
         {
-            var delete = await wrapper.DeleteIPPool(Helper.ParseEntityID(id));
+            var delete = await wrapper.DeleteIPPool(ConverterUtil.ParseEntityID(id));
             return mapper.Map<CreationResult>(delete);
         }
 

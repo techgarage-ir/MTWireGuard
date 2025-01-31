@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MikrotikAPI.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 
 namespace MTWireGuard.Application.Mapper
 {
@@ -25,7 +26,7 @@ namespace MTWireGuard.Application.Mapper
             */
             CreateMap<WGServer, WGServerViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Convert.ToInt32(Helper.ParseEntityID(src.Id))))
+                    opt => opt.MapFrom(src => Convert.ToInt32(ConverterUtil.ParseEntityID(src.Id))))
                 .ForMember(dest => dest.IsEnabled,
                     opt => opt.MapFrom(src => !src.Disabled))
                 .ForMember(dest => dest.IPAddress,
@@ -51,7 +52,7 @@ namespace MTWireGuard.Application.Mapper
             */
             CreateMap<ServerUpdateModel, WGServerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)));
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)));
         }
 
         private void Init()
@@ -89,7 +90,7 @@ namespace MTWireGuard.Application.Mapper
 
         private WGServerDBModel GetDBServer(WGServer source)
         {
-            int id = Helper.ParseEntityID(source.Id);
+            int id = ConverterUtil.ParseEntityID(source.Id);
             UpdateCache();
             _serverCache.TryGetValue(id, out var server);
             return server;

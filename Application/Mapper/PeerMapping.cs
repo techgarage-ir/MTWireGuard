@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MikrotikAPI.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 using Serilog;
 
 namespace MTWireGuard.Application.Mapper
@@ -28,7 +29,7 @@ namespace MTWireGuard.Application.Mapper
             */
             CreateMap<WGPeer, WGPeerViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.AllowedAddress,
                     opt => opt.MapFrom(src => src.AllowedAddress))
                 .ForMember(dest => dest.AllowedIPs,
@@ -40,9 +41,9 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.IsDifferent,
                     opt => opt.MapFrom(src => HasDifferences(src)))
                 .ForMember(dest => dest.Upload,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TX), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TX), 2)))
                 .ForMember(dest => dest.Download,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.RX), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.RX), 2)))
                 .ForMember(dest => dest.UploadBytes,
                     opt => opt.MapFrom(src => Convert.ToInt64(src.TX)))
                 .ForMember(dest => dest.DownloadBytes,
@@ -69,7 +70,7 @@ namespace MTWireGuard.Application.Mapper
             CreateMap<WGPeerCreateModel, WGPeerDBModel>();
             CreateMap<UserUpdateModel, WGPeerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.ClientAddress,
                     opt => opt.MapFrom(src => src.IPAddress));
 
@@ -78,15 +79,15 @@ namespace MTWireGuard.Application.Mapper
             CreateMap<UserSyncModel, WGPeerDBModel>();
             CreateMap<UserSyncModel, WGPeerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)));
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)));
             CreateMap<UserUpdateModel, WGPeerDBModel>();
 
             // Peer Handshake
             CreateMap<WGPeerLastHandshake, WGPeerLastHandshakeViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.LastHandshake,
-                    opt => opt.MapFrom(src => Helper.ConvertToTimeSpan(src.LastHandshake)));
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertToTimeSpan(src.LastHandshake)));
         }
 
         private void Init()
@@ -110,7 +111,7 @@ namespace MTWireGuard.Application.Mapper
 
         private WGPeerDBModel GetDBUser(WGPeer source)
         {
-            int id = Helper.ParseEntityID(source.Id);
+            int id = ConverterUtil.ParseEntityID(source.Id);
             UpdateCache();
             _userCache.TryGetValue(id, out var user);
             return user;
@@ -133,7 +134,7 @@ namespace MTWireGuard.Application.Mapper
                 if (_schedulerCache.TryGetValue((int)dbuser.ExpireID, out var expire))
                     return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
                 else
-                    _logger.Error("Can't find expiration scheduler for user #{0}: {1}", dbuser.Id, source.Name);
+                    _logger.Error("Can't find expiration scheduler for user #{UserID}: {Username}", dbuser.Id, source.Name);
                 return string.Empty;
             }
             catch (Exception ex)
@@ -155,7 +156,7 @@ namespace MTWireGuard.Application.Mapper
                         cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1);
                         return api.GetUsersHandshakes().Result.ToDictionary(u => u.Id);
                     });
-                _handshakeCache.TryGetValue(Helper.ParseEntityID(source.Id), out var lastHandshake);
+                _handshakeCache.TryGetValue(ConverterUtil.ParseEntityID(source.Id), out var lastHandshake);
                 return lastHandshake?.LastHandshake.ToString() ?? "Unknown";
             }
             catch (Exception ex)
@@ -200,7 +201,7 @@ namespace MTWireGuard.Application.Mapper
 
         private bool HasDifferences(WGPeer source)
         {
-            var id = Helper.ParseEntityID(source.Id);
+            var id = ConverterUtil.ParseEntityID(source.Id);
             var dbUser = GetDBUser(source);
             var dbTraffic = _db.LastKnownTraffic.Where(x => x.UserID == id).FirstOrDefault();
             return dbUser == null || dbTraffic == null || source.PrivateKey.Length < 5;

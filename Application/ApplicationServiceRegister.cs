@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MTWireGuard.Application.Mapper;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Services;
+using MTWireGuard.Application.Utils;
 using Serilog;
 using Serilog.Ui.Core.Extensions;
 using Serilog.Ui.SqliteDataProvider.Extensions;
@@ -18,7 +19,7 @@ namespace MTWireGuard.Application
             // Add Serilog
             services.AddLogging(loggingBuilder =>
             {
-                loggingBuilder.AddSerilog(Helper.LoggerConfiguration(), dispose: true);
+                loggingBuilder.AddSerilog(CoreUtil.LoggerConfiguration(), dispose: true);
             });
 
             // Add DBContext
@@ -97,7 +98,7 @@ namespace MTWireGuard.Application
             {
                 options.UseSqliteServer(setupOptions =>
                 {
-                    setupOptions.WithConnectionString($"Data Source={Helper.GetLogPath("logs.db")}");
+                    setupOptions.WithConnectionString($"Data Source={CoreUtil.GetLogPath("logs.db")}");
                     setupOptions.WithTable("Logs");
                 });
 

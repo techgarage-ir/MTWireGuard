@@ -1,5 +1,6 @@
 using MTWireGuard.Application;
 using MTWireGuard.Application.MinimalAPI;
+using MTWireGuard.Application.Utils;
 using MTWireGuard.Middlewares;
 using Serilog;
 using Serilog.Ui.Web.Extensions;
@@ -17,7 +18,7 @@ internal class Program
         builder.Services.AddProblemDetails();
         builder.Services.AddApplicationServices();
 
-        builder.Host.UseSerilog(Helper.LoggerConfiguration());
+        builder.Host.UseSerilog(CoreUtil.LoggerConfiguration());
 
         var app = builder.Build();
 

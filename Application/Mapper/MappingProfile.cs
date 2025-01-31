@@ -2,6 +2,7 @@
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Requests;
+using MTWireGuard.Application.Utils;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -25,9 +26,9 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Type,
                     opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.Upload,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TX), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TX), 2)))
                 .ForMember(dest => dest.Download,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.RX), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.RX), 2)))
                 .ForMember(dest => dest.UploadBytes,
                     opt => opt.MapFrom(src => Convert.ToInt64(src.TX)))
                 .ForMember(dest => dest.DownloadBytes,
@@ -60,17 +61,17 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.FreeRAMPercentage,
                     opt => opt.MapFrom(src => (byte)(Convert.ToInt64(src.FreeMemory) * 100 / Convert.ToInt64(src.TotalMemory))))
                 .ForMember(dest => dest.TotalHDD,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TotalHDDSpace), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TotalHDDSpace), 2)))
                 .ForMember(dest => dest.FreeHDD,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.FreeHDDSpace), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.FreeHDDSpace), 2)))
                 .ForMember(dest => dest.UsedHDD,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TotalHDDSpace) - Convert.ToInt64(src.FreeHDDSpace), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TotalHDDSpace) - Convert.ToInt64(src.FreeHDDSpace), 2)))
                 .ForMember(dest => dest.TotalRAM,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TotalMemory), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TotalMemory), 2)))
                 .ForMember(dest => dest.FreeRAM,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.FreeMemory), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.FreeMemory), 2)))
                 .ForMember(dest => dest.UsedRAM,
-                    opt => opt.MapFrom(src => Helper.ConvertByteSize(Convert.ToInt64(src.TotalMemory) - Convert.ToInt64(src.FreeMemory), 2)))
+                    opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TotalMemory) - Convert.ToInt64(src.FreeMemory), 2)))
                 .ForMember(dest => dest.UPTime,
                     opt => opt.MapFrom(src => FormatUptime(src.Uptime)));
 
@@ -142,7 +143,7 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => TimeToString(src.Interval)));
             CreateMap<SchedulerUpdateModel, MikrotikAPI.Models.SchedulerUpdateModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.Policy,
                     opt => opt.MapFrom(src => string.Join(',', src.Policies)))
                 .ForMember(dest => dest.StartDate,
@@ -155,7 +156,7 @@ namespace MTWireGuard.Application.Mapper
             // IPAddress
             CreateMap<MikrotikAPI.Models.IPAddress, IPAddressViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.Enabled,
                     opt => opt.MapFrom(src => !src.Disabled))
                 .ForMember(dest => dest.Valid,
@@ -164,7 +165,7 @@ namespace MTWireGuard.Application.Mapper
             // IP Pools
             CreateMap<MikrotikAPI.Models.IPPool, IPPoolViewModel>()
                 .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.Ranges,
                     opt => opt.MapFrom(src => src.Ranges.Split(',', StringSplitOptions.None).ToList()));
 
@@ -173,7 +174,7 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Id,
                     opt => opt.Ignore())
                 .ForMember(dest => dest.UserID,
-                    opt => opt.MapFrom(src => Helper.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.CreationTime,
                     opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.RX,
@@ -196,7 +197,7 @@ namespace MTWireGuard.Application.Mapper
 
         private static List<string> FormatTopics(string topics)
         {
-            return topics.Split(',', StringSplitOptions.TrimEntries).Select(t => t = Helper.UpperCaseTopics.Contains(t) ? t.ToUpper() : t.FirstCharToUpper()).ToList();
+            return topics.Split(',', StringSplitOptions.TrimEntries).Select(t => t = Constants.UpperCaseTopics.Contains(t) ? t.ToUpper() : t.FirstCharToUpper()).ToList();
         }
 
         private static string FormatUptime(string uptime)

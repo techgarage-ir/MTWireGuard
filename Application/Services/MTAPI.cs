@@ -257,19 +257,11 @@ namespace MTWireGuard.Application.Services
                     Comment = $"Disable Wireguard Peer: {peer.Name}",
                     Interval = TimeSpan.Zero
                 }) : null;
-                var schedulerId = 0;
                 if (deleteScheduler == null || deleteScheduler.Code == "200")
                 {
-                    if (deleteScheduler == null) goto skipGettingScheduler;
-                    var schedulers = await GetSchedulers();
-                    var scheduler = schedulers.Find(s => s.Name == $"DisableUser{userID}");
-                    schedulerId = scheduler.Id;
-                skipGettingScheduler:
-                    var expireID = deleteScheduler != null ? schedulerId : 0;
                     await dbContext.Users.AddAsync(new()
                     {
                         Id = userID,
-                        ExpireID = expireID,
                         TrafficLimit = peer.Traffic,
                         AllowedIPs = peer.AllowedIPs ?? "0.0.0.0/0",
                         InheritDNS = inheritDNS,
@@ -348,8 +340,7 @@ namespace MTWireGuard.Application.Services
             var mtUpdate = await wrapper.UpdateUser(mtPeer);
             if (mtUpdate.Success)
             {
-                var schedulers = await GetSchedulers();
-                var scheduler = schedulers.Find(s => s.Name == $"DisableUser{user.Id}");
+                var scheduler = await GetSchedulerByName($"DisableUser{user.Id}");
                 var exists = await dbContext.Users.FindAsync(user.Id);
                 dbContext.ChangeTracker.Clear();
                 var schedulerId = scheduler?.Id ?? 0;
@@ -375,8 +366,7 @@ namespace MTWireGuard.Application.Services
                         });
                     if (deleteScheduler.Code == "200")
                     {
-                        schedulers = await GetSchedulers();
-                        scheduler = schedulers.Find(s => s.Name == $"DisableUser{user.Id}");
+                        scheduler = await GetSchedulerByName($"DisableUser{user.Id}");
                         schedulerId = scheduler.Id;
                     }
                     else
@@ -390,7 +380,6 @@ namespace MTWireGuard.Application.Services
                     dbContext.Users.Update(new()
                     {
                         Id = user.Id,
-                        ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
                         InheritIP = user.InheritIP,
                         TrafficLimit = user.Traffic,
@@ -403,7 +392,6 @@ namespace MTWireGuard.Application.Services
                     await dbContext.Users.AddAsync(new()
                     {
                         Id = user.Id,
-                        ExpireID = expireID,
                         InheritDNS = user.InheritDNS,
                         InheritIP = user.InheritIP,
                         TrafficLimit = user.Traffic,
@@ -547,10 +535,10 @@ namespace MTWireGuard.Application.Services
                 var user = await dbContext.Users.FindAsync(id);
                 if (user != null)
                 {
-                    if (user.ExpireID != null)
-                    {
-                        await wrapper.DeleteScheduler(ConverterUtil.ParseEntityID((int)user.ExpireID));
-                    }
+                    var schedulers = await wrapper.GetSchedulers();
+                    var scheduler = schedulers.Find(s => s.Name == $"DisableUser{id}");
+                    if (scheduler != null)
+                    await wrapper.DeleteScheduler(scheduler.Id);
                     dbContext.Users.Remove(user);
                 }
                 await dbContext.LastKnownTraffic.Where(t => t.UserID == id).ExecuteDeleteAsync();
@@ -587,6 +575,12 @@ namespace MTWireGuard.Application.Services
         public async Task<SchedulerViewModel> GetScheduler(int id)
         {
             var model = await wrapper.GetScheduler(ConverterUtil.ParseEntityID(id));
+            return mapper.Map<SchedulerViewModel>(model);
+        }
+
+        public async Task<SchedulerViewModel> GetSchedulerByName(string name)
+        {
+            var model = await wrapper.GetSchedulerByName(name);
             return mapper.Map<SchedulerViewModel>(model);
         }
 

@@ -8,7 +8,6 @@ namespace MTWireGuard.Application.Models.Mikrotik
     public class WGPeerDBModel
     {
         public int Id { get; set; }
-        public int? ExpireID { get; set; }
         public string AllowedIPs { get; set; }
         public ulong RX { get; set; }
         public ulong TX { get; set; }

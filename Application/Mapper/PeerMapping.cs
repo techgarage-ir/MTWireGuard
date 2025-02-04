@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using MikrotikAPI.Models;
@@ -121,21 +122,23 @@ namespace MTWireGuard.Application.Mapper
         {
             try
             {
-                var dbuser = GetDBUser(source);
-                if (dbuser == null || dbuser.ExpireID == null || dbuser.ExpireID == 0) return string.Empty;
+                if (source == null)
+                {
+                    return string.Empty;
+                }
+                var userId = ConverterUtil.ParseEntityID(source.Id);
                 _schedulerCache = _memoryCache.GetOrCreate(
                     "Schedulers",
                     cacheEntry =>
                     {
                         cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
                         var api = Provider.GetService<IMikrotikRepository>();
-                        return api.GetSchedulers().Result.ToDictionary(s => s.Id);
+                        return api.GetSchedulers().Result.Where(s => s.Name.StartsWith("DisableUser")).ToDictionary(s => int.Parse(s.Name[11..]));
                     });
-                if (_schedulerCache.TryGetValue((int)dbuser.ExpireID, out var expire))
+                if (_schedulerCache.TryGetValue(userId, out var expire))
                     return expire != null ? expire.StartDate.ToDateTime(expire.StartTime).ToString("yyyy/MM/dd HH:mm:ss") : string.Empty;
                 else
-                    _logger.Error("Can't find expiration scheduler for user #{UserID}: {Username}", dbuser.Id, source.Name);
-                return string.Empty;
+                    return string.Empty;
             }
             catch (Exception ex)
             {

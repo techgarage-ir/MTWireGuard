@@ -266,6 +266,12 @@ namespace MikrotikAPI
             return json.ToModel<Scheduler>();
         }
 
+        public async Task<Scheduler> GetSchedulerByName(string name)
+        {
+            var json = await SendGetRequestAsync($"{Endpoints.Scheduler}/{name}");
+            return json.ToModel<Scheduler>();
+        }
+
         public async Task<CreationStatus> CreateScheduler(SchedulerCreateModel scheduler)
         {
             return await CreateItem<Scheduler>(Endpoints.Scheduler, scheduler);

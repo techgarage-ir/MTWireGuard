@@ -35,7 +35,6 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> UpdateScheduler(Models.Mikrotik.SchedulerUpdateModel scheduler);
         Task<CreationResult> CreateServer(ServerCreateModel server);
         Task<CreationResult> CreateUser(UserCreateModel peer);
-        Task<CreationResult> SyncUser(UserSyncModel user);
         Task<CreationResult> UpdateUser(UserUpdateModel user);
         Task<CreationResult> UpdateServer(ServerUpdateModel server);
         Task<CreationResult> EnableServer(int id);
@@ -52,5 +51,6 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> DeleteIPPool(int id);
         Task<List<IPAddressViewModel>> GetIPAddresses();
         Task<List<IPAddressViewModel>> GetServerIP(string Name);
+        Task<CreationResult> ResetUserTraffic(int id);
     }
 }

@@ -31,7 +31,6 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string Upload { get; set; }
         public ulong DownloadBytes { get; set; }
         public ulong UploadBytes { get; set; }
-        public bool IsDifferent { get; set; }
         public string Expire { get; set; }
         public int Traffic { get; set; }
         public ulong TrafficUsed { get; set; }
@@ -62,14 +61,6 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public bool InheritAllowedAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
-    }
-
-    public class UserSyncModel
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string PrivateKey { get; set; }
-        public string PublicKey { get; set; }
     }
 
     public class UserUpdateModel

@@ -291,45 +291,6 @@ namespace MTWireGuard.Application.Services
             return mapper.Map<CreationResult>(model);
         }
 
-        public async Task<CreationResult> SyncUser(UserSyncModel user)
-        {
-            CreationResult result = new();
-            var userID = user.Id;
-            var dbUser = await dbContext.Users.FindAsync(userID);
-            var mtUser = await GetUser(userID);
-            if (dbUser == null)
-            {
-                await dbContext.Users.AddAsync(new()
-                {
-                    Id = userID,
-                    AllowedIPs = "0.0.0.0/0"
-                });
-                var lkt = await dbContext.LastKnownTraffic.FindAsync(userID);
-                if (lkt == null)
-                    await dbContext.LastKnownTraffic.AddAsync(new()
-                    {
-                        UserID = userID,
-                        RX = 0,
-                        TX = 0,
-                        CreationTime = DateTime.Now
-                    });
-                await dbContext.SaveChangesAsync();
-                result = new()
-                {
-                    Code = "200",
-                    Title = "Success",
-                    Description = "Database updated successfully."
-                };
-            }
-            if (mtUser.PublicKey != user.PublicKey)
-            {
-                var fxUser = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user);
-                var update = await wrapper.UpdateUser(fxUser);
-                result = mapper.Map<CreationResult>(update);
-            }
-            return result;
-        }
-
         public async Task<CreationResult> UpdateUser(UserUpdateModel user)
         {
             var mtPeer = mapper.Map<MikrotikAPI.Models.WGPeerUpdateModel>(user);
@@ -648,7 +609,48 @@ namespace MTWireGuard.Application.Services
             return mapper.Map<List<IPAddressViewModel>>(model);
         }
 
-        public T Map<T>(object source)
+        public async Task<CreationResult> ResetUserTraffic(int id)
+        {
+            try
+            {
+                var traffics = dbContext.DataUsages.Where(t => t.UserID == id);
+                dbContext.DataUsages.RemoveRange(traffics);
+
+                var lastKnownTraffic = dbContext.LastKnownTraffic.FirstOrDefault(t => t.UserID == id);
+                if (lastKnownTraffic != null)
+                {
+                    lastKnownTraffic.RX = 0;
+                    lastKnownTraffic.TX = 0;
+                }
+
+                var user = dbContext.Users.Find(id);
+                if (user != null)
+                {
+                    user.RX = 0;
+                    user.TX = 0;
+                }
+
+                await dbContext.SaveChangesAsync();
+                return new()
+                {
+                    Code = "200",
+                    Description = "User traffic usage has been reset.",
+                    Title = "Traffic reset done"
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Reset user traffic", ex);
+                return new()
+                {
+                    Code = "500",
+                    Description = ex.Message,
+                    Title = "Traffic reset failed!"
+                };
+            }
+        }
+
+        private T Map<T>(object source)
         {
             try
             {
@@ -657,12 +659,12 @@ namespace MTWireGuard.Application.Services
             catch (AutoMapperMappingException autoMapperException)
             {
                 logger.Error(autoMapperException, "Error mapping");
-                throw autoMapperException;
+                throw;
             }
             catch (Exception ex)
             {
                 logger.Error(ex, $"Failed to map {ex.Message}");
-                throw ex;
+                throw;
             }
         }
 

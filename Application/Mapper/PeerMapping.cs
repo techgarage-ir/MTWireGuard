@@ -39,8 +39,6 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => $"{src.CurrentEndpointAddress}:{src.CurrentEndpointPort}"))
                 .ForMember(dest => dest.IsEnabled,
                     opt => opt.MapFrom(src => !src.Disabled))
-                .ForMember(dest => dest.IsDifferent,
-                    opt => opt.MapFrom(src => HasDifferences(src)))
                 .ForMember(dest => dest.Upload,
                     opt => opt.MapFrom(src => ConverterUtil.ConvertByteSize(Convert.ToInt64(src.TX), 2)))
                 .ForMember(dest => dest.Download,
@@ -77,10 +75,6 @@ namespace MTWireGuard.Application.Mapper
 
             // DBUser
             CreateMap<WGPeerViewModel, WGPeerDBModel>();
-            CreateMap<UserSyncModel, WGPeerDBModel>();
-            CreateMap<UserSyncModel, WGPeerUpdateModel>()
-                .ForMember(dest => dest.Id,
-                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)));
             CreateMap<UserUpdateModel, WGPeerDBModel>();
 
             // Peer Handshake
@@ -200,14 +194,6 @@ namespace MTWireGuard.Application.Mapper
         {
             var expireDate = GetPeerExpire(source);
             return !string.IsNullOrWhiteSpace(expireDate) ? expireDate : "Unlimited";
-        }
-
-        private bool HasDifferences(WGPeer source)
-        {
-            var id = ConverterUtil.ParseEntityID(source.Id);
-            var dbUser = GetDBUser(source);
-            var dbTraffic = _db.LastKnownTraffic.Where(x => x.UserID == id).FirstOrDefault();
-            return dbUser == null || dbTraffic == null || source.PrivateKey.Length < 5;
         }
     }
 }

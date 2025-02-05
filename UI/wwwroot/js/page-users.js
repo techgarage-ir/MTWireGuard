@@ -121,7 +121,7 @@ $(function() {
           { data: 'ipAddress'},
           { data: 'traffic' },
           { data: 'expire' },
-          { data: 'isDifferent' }
+          { data: '' }
         ],
         columnDefs: [
           {
@@ -186,13 +186,12 @@ $(function() {
             orderable: false,
             searchable: false,
             className: 'action-buttons',
-            render: function(data, type, full, meta) {
-              let dlBtns = data ? '<a href="javascript:;" class="btn text-primary btn-icon item-sync" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSyncUser"><i class="bx bx-sync"></i></a>' : 
-                '<a href="javascript:;" class="btn text-primary btn-icon item-qr" data-bs-toggle="modal" data-bs-target="#QRModal"><i class="bx bx-qr"></i></a>' +
-                '<a href="javascript:;" class="btn text-primary btn-icon item-download"><i class="bx bxs-download"></i></a>';
+              render: function (data, type, full, meta) {
               return (
                 '<a href="javascript:;" class="btn text-primary btn-icon item-edit" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEditUser"><i class="bx bxs-edit"></i></a>' +
-                dlBtns +
+                '<a href="javascript:;" class="btn text-primary btn-icon item-reset"><i class="bx bx-reset"></i></a>' +
+                '<a href="javascript:;" class="btn text-primary btn-icon item-qr" data-bs-toggle="modal" data-bs-target="#QRModal"><i class="bx bx-qr"></i></a>' +
+                '<a href="javascript:;" class="btn text-primary btn-icon item-download"><i class="bx bxs-download"></i></a>'+
                 '<div class="d-inline-block">' +
                 '<a href="javascript:;" class="btn text-primary btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>' +
                 '<ul class="dropdown-menu dropdown-menu-end">' +
@@ -438,31 +437,21 @@ $(function() {
               }
             });
           });
-          dt_basic.on('click', 'a.item-sync', function (e) {
+          dt_basic.on('click', 'a.item-reset', function (e) {
             let tr = e.target.closest('tr');
             let row = dt_basic.row(tr)
             let rowData = row.data();
-            
-            $.map(rowData, function(value, key) {
-              key = key.replace('_', '-');
-              let field = $('#offcanvasSyncUser #sync-' + key);
-              if (field) {
-                switch (key) {
-                  case 'name':
-                    $('#sync-username').val(value);
-                  break;
-                  case 'publicKey':
-                    $('#sync-private-key').val(value);
-                  break;
-                  case 'privateKey':
-                    $('#sync-public-key').val(value);
-                  break;
-                  default:
-                    console.log(`${key} => ${value}`);
-                    field.val(value);
-                  break;
-                }
-              }
+
+            let userId = rowData['id'];
+            api.users.resetTraffic(userId).then(data => {
+              const toastMSG = new toastMessage("Reset Traffic", data.body, data.title, data.background);
+              const toastElement = toastMSG.getElement();
+              toastContainer.append(toastElement);
+              bootstrap.Toast.getOrCreateInstance(toastElement).show();
+            }).catch(err => {
+                console.error(err);
+            }).finally(() => {
+                dt_basic.ajax.reload();
             });
           });
           dt_basic.on('click', 'a.item-delete', function (e) {
@@ -478,14 +467,13 @@ $(function() {
             let rowData = row.data();
             let userId = rowData['id'];
             let enabled = rowData['isEnabled'];
-            console.log(`${userId}: ${enabled}`);
             api.users.activate(userId, {enabled: enabled}).then(data => {
               const toastMSG = new toastMessage("Activate User", data.body, data.title, data.background);
               const toastElement = toastMSG.getElement();
               toastContainer.append(toastElement);
               bootstrap.Toast.getOrCreateInstance(toastElement).show();
             }).catch(err => {
-              console.log(err);
+              console.error(err);
             }).finally(() => {
               dt_basic.ajax.reload();
             });
@@ -566,7 +554,6 @@ $(function() {
   $('#editUserForm').on('submit', e => {
     let form = $(e.target);
     let data = new FormData(e.target);
-    console.log(data);
     api.users.update(data.get('ID'), {
       name: data.get('Username') || null,
       password: data.get('Password') || null,
@@ -589,26 +576,6 @@ $(function() {
       enabled: form.find('button.btn-toggle').attr('aria-pressed') == 'true'
     }).then(data => {
       const toastMSG = new toastMessage("Update User", data.body, data.title, data.background);
-      const toastElement = toastMSG.getElement();
-      toastContainer.append(toastElement);
-      bootstrap.Toast.getOrCreateInstance(toastElement).show();
-    }).catch(err => {
-      console.error(err);
-    }).finally(() => {
-      dt_basic.ajax.reload();
-    });
-  });
-  
-  // Sync user form
-  $('#syncUserForm').on('submit', e => {
-    let data = new FormData(e.target);
-    api.users.sync(data.get('ID'), {
-      name: data.get('Username') || null,
-      password: data.get('Password') || null,
-      privateKey: data.get('PrivateKey') || null,
-      publicKey: data.get('PublicKey') || null
-    }).then(data => {
-      const toastMSG = new toastMessage("Sync User", data.body, data.title, data.background);
       const toastElement = toastMSG.getElement();
       toastContainer.append(toastElement);
       bootstrap.Toast.getOrCreateInstance(toastElement).show();

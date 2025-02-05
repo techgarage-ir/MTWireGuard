@@ -67,7 +67,8 @@ class APIClient {
         qr: (userId) => this.makeRequest(this.endpoints.users.QR(userId)),
         download: (userId) => this.makeRequest(this.endpoints.users.Download(userId), 'GET', null, true),
         delete: (userId) => this.makeRequest(this.endpoints.users.Single(userId), 'DELETE'),
-        activate: (userId, isEnabled) => this.makeRequest(this.endpoints.users.Activation(userId), 'PATCH', isEnabled)
+        activate: (userId, isEnabled) => this.makeRequest(this.endpoints.users.Activation(userId), 'PATCH', isEnabled),
+        resetTraffic: (userId) => this.makeRequest(this.endpoints.users.ResetTraffic(userId))
     };
 
     servers = {
@@ -132,7 +133,8 @@ class APIClient {
                 Download: (userId) => { return `${users}/file/${userId}`; },
                 Activation: (userId) => { return `${users}/activation/${userId}`; },
                 Onlines: () => { return `${users}/onlines` },
-                Count: () => { return `${users}/count` }
+                Count: () => { return `${users}/count` },
+                ResetTraffic: (userId) => { return `${users}/reset/${userId}` }
             },
             servers: {
                 Single: (serverId) => { return `${servers}/${serverId}`; },

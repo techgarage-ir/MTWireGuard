@@ -86,19 +86,6 @@ namespace MTWireGuard.Application.MinimalAPI
             return TypedResults.Ok(message);
         }
 
-        public static async Task<Ok<ToastMessage>> Sync(
-            [FromServices] IMikrotikRepository API,
-            [FromServices] IMapper mapper,
-            int id,
-            SyncUserRequest request)
-        {
-            request.ID = id;
-            var model = mapper.Map<UserSyncModel>(request);
-            var update = await API.SyncUser(model);
-            var message = mapper.Map<ToastMessage>(update);
-            return TypedResults.Ok(message);
-        }
-
         public static async Task<Ok<ToastMessage>> Delete(
             [FromServices] IMikrotikRepository API,
             [FromServices] IMapper mapper,
@@ -118,6 +105,16 @@ namespace MTWireGuard.Application.MinimalAPI
             request.Id = id;
             var active = (!request.Enabled) ? await API.EnableUser(request.Id) : await API.DisableUser(request.Id);
             var message = mapper.Map<ToastMessage>(active);
+            return TypedResults.Ok(message);
+        }
+
+        public static async Task<Ok<ToastMessage>> ResetTraffic(
+            [FromServices] IMikrotikRepository API,
+            [FromServices] IMapper mapper,
+            int id)
+        {
+            var reset = await API.ResetUserTraffic(id);
+            var message = mapper.Map<ToastMessage>(reset);
             return TypedResults.Ok(message);
         }
     }

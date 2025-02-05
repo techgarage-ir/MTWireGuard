@@ -59,9 +59,9 @@ namespace MTWireGuard.Application.MinimalAPI
             group.MapGet($"{Endpoints.QR}/{{id}}", UserController.GetQR);
             group.MapGet($"{Endpoints.File}/{{id}}", UserController.GetFile);
             group.MapGet($"{Endpoints.Onlines}", UserController.GetOnlines);
+            group.MapGet($"{Endpoints.Reset}/{{id}}", UserController.ResetTraffic);
             group.MapPost("/", UserController.Create);
             group.MapPut("/{id}", UserController.Update);
-            group.MapPatch($"{Endpoints.Sync}/{{id}}", UserController.Sync);
             group.MapPatch($"{Endpoints.Activation}/{{id}}", UserController.Activation);
             group.MapDelete("/{id}", UserController.Delete);
 
@@ -211,8 +211,8 @@ namespace MTWireGuard.Application.MinimalAPI
         public const string Count = "/Count";
         public const string File = "/File";
         public const string QR = "/QR";
-        public const string Sync = "/Sync";
         public const string Onlines = "/Onlines";
+        public const string Reset = "/Reset";
         //  Configuration
         public const string DNS = "/DNS";
         public const string Identity = "/Identity";

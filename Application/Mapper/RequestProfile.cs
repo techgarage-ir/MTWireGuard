@@ -27,8 +27,6 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Expire,
                     opt => opt.MapFrom(src => (!string.IsNullOrWhiteSpace(src.Expire)) ? Convert.ToDateTime(src.Expire) : (DateTime?)null));
 
-            CreateMap<SyncUserRequest, UserSyncModel>();
-
             CreateMap<UpdateClientRequest, UserUpdateModel>()
                 .ForMember(dest => dest.EndpointAddress,
                     opt => opt.MapFrom(src => src.Endpoint))

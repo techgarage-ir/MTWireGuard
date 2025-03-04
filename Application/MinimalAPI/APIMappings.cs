@@ -60,10 +60,12 @@ namespace MTWireGuard.Application.MinimalAPI
             group.MapGet($"{Endpoints.File}/{{id}}", UserController.GetFile);
             group.MapGet($"{Endpoints.Onlines}", UserController.GetOnlines);
             group.MapGet($"{Endpoints.Reset}/{{id}}", UserController.ResetTraffic);
+            group.MapGet($"{Endpoints.V2ray}/{{id}}", UserController.GetV2rayQR);
             group.MapPost("/", UserController.Create);
             group.MapPut("/{id}", UserController.Update);
             group.MapPatch($"{Endpoints.Activation}/{{id}}", UserController.Activation);
             group.MapDelete("/{id}", UserController.Delete);
+            group.Map($"{Endpoints.Import}", UserController.Import);
 
             return group;
         }
@@ -75,6 +77,7 @@ namespace MTWireGuard.Application.MinimalAPI
             group.MapPut("/{id}", ServerController.Update);
             group.MapDelete("/{id}", ServerController.Delete);
             group.MapPatch($"{Endpoints.Activation}/{{id}}", ServerController.Activation);
+            group.Map($"{Endpoints.Import}", ServerController.Import);
 
             return group;
         }
@@ -209,10 +212,12 @@ namespace MTWireGuard.Application.MinimalAPI
         //  Users, Servers
         public const string Activation = "/Activation";
         public const string Count = "/Count";
+        public const string Import = "/Import";
         public const string File = "/File";
         public const string QR = "/QR";
         public const string Onlines = "/Onlines";
         public const string Reset = "/Reset";
+        public const string V2ray = "/V2ray";
         //  Configuration
         public const string DNS = "/DNS";
         public const string Identity = "/Identity";

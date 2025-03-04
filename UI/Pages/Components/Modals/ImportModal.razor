@@ -1,0 +1,27 @@
+﻿<div class="modal modal-sm fade" id="ImportModal" tabindex="-1" aria-labelledby="ImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ImportModalLabel">Import Config</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center m-0">
+                <form class="import-json pt-0" id="importJsonForm" onsubmit="return false">
+                    <div class="mb-3">
+                        <label class="form-label" for="import-file">JSON File</label>
+                        <input type="file" class="form-control form-control-sm" id="import-file" name="Config" aria-label="Config" />
+                    </div>
+                    <div class="progress mb-3" role="progressbar" aria-label="Import file" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">0%</div>
+                    </div>
+                    <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
+                    <button type="reset" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}

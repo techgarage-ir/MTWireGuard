@@ -22,12 +22,67 @@ class APIClient {
                     body: body ? JSON.stringify(body) : null
                 });
 
-                const result = await response.json();
-                return result;
+                if (response.ok) {
+                    const result = await response.json();
+                    return result;
+                } else {
+                    return null;
+                }
             }
         } catch (err) {
             throw err;
         }
+    }
+
+    async importData(endpoint, requestData) {
+        const socket = new WebSocket(endpoint);
+
+        // Prepare the progress bar
+        const progressBar = document.getElementById("progress-bar");
+
+        socket.onopen = function (event) {
+            // Send the request to the server
+            socket.send(JSON.stringify(requestData));
+        };
+
+        socket.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                // Assuming the server sends progress percentage
+                if (data) {
+                    if (data.progress) {
+                        // Update the progress bar based on server's progress
+                        progressBar.style.width = data.progress + '%';
+                        progressBar.textContent = data.progress + '%';
+
+                        // Optionally, you can update the aria-valuenow for better accessibility
+                        progressBar.parentElement.setAttribute('aria-valuenow', data.progress);
+                    }
+
+                    // If the import is complete (progress 100%), close the socket
+                    else if (data.succeed === true) {
+                        progressBar.textContent = "DONE!";
+                        socket.close();
+                    }
+                }
+            } catch (error) {
+                console.error("Error processing WebSocket message:", error);
+            }
+        };
+
+        socket.onerror = function (event) {
+            progressBar.textContent = "Connection Failed!";
+            console.error("WebSocket error:", event);
+        };
+
+        socket.onclose = function (event) {
+            if (event.wasClean) {
+                console.log("WebSocket connection closed cleanly");
+            } else {
+                console.error("WebSocket connection closed with error");
+            }
+        };
     }
 
     auth = {
@@ -65,10 +120,12 @@ class APIClient {
         update: (userId, updatedUser) => this.makeRequest(this.endpoints.users.Single(userId), 'PUT', updatedUser),
         sync: (userId, updatedUser) => this.makeRequest(this.endpoints.users.Sync(userId), 'PATCH', updatedUser),
         qr: (userId) => this.makeRequest(this.endpoints.users.QR(userId)),
+        v2ray: (userId) => this.makeRequest(this.endpoints.users.V2ray(userId)),
         download: (userId) => this.makeRequest(this.endpoints.users.Download(userId), 'GET', null, true),
         delete: (userId) => this.makeRequest(this.endpoints.users.Single(userId), 'DELETE'),
         activate: (userId, isEnabled) => this.makeRequest(this.endpoints.users.Activation(userId), 'PATCH', isEnabled),
-        resetTraffic: (userId) => this.makeRequest(this.endpoints.users.ResetTraffic(userId))
+        resetTraffic: (userId) => this.makeRequest(this.endpoints.users.ResetTraffic(userId)),
+        import: (users) => this.importData(this.endpoints.users.Import(), users)
     };
 
     servers = {
@@ -78,7 +135,8 @@ class APIClient {
         create: (server) => this.makeRequest(this.endpoints.Servers, 'POST', server),
         update: (serverId, updatedServer) => this.makeRequest(this.endpoints.servers.Single(serverId), 'PUT', updatedServer),
         delete: (serverId) => this.makeRequest(this.endpoints.servers.Single(serverId), 'DELETE'),
-        activate: (serverId, isEnabled) => this.makeRequest(this.endpoints.servers.Activation(serverId), 'PATCH', isEnabled)
+        activate: (serverId, isEnabled) => this.makeRequest(this.endpoints.servers.Activation(serverId), 'PATCH', isEnabled),
+        import: (servers) => this.importData(this.endpoints.servers.Import(), servers)
     };
 
     pools = {
@@ -130,16 +188,19 @@ class APIClient {
                 Single: (userId) => { return `${users}/${userId}`; },
                 Sync: (userId) => { return `${users}/sync/${userId}`; },
                 QR: (userId) => { return `${users}/qr/${userId}`; },
+                V2ray: (userId) => { return `${users}/v2ray/${userId}`; },
                 Download: (userId) => { return `${users}/file/${userId}`; },
                 Activation: (userId) => { return `${users}/activation/${userId}`; },
                 Onlines: () => { return `${users}/onlines` },
                 Count: () => { return `${users}/count` },
-                ResetTraffic: (userId) => { return `${users}/reset/${userId}` }
+                ResetTraffic: (userId) => { return `${users}/reset/${userId}` },
+                Import: () => { return `${users}/import` }
             },
             servers: {
                 Single: (serverId) => { return `${servers}/${serverId}`; },
                 Activation: (serverId) => { return `${servers}/activation/${serverId}`; },
-                Count: () => { return `${servers}/count` }
+                Count: () => { return `${servers}/count` },
+                Import: () => { return `${servers}/import` }
             },
             pools: {
                 Single: (poolId) => { return `${pools}/${poolId}`; },

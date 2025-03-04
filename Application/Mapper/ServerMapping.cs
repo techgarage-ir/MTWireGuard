@@ -5,6 +5,7 @@ using MikrotikAPI.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Utils;
+using Serilog;
 
 namespace MTWireGuard.Application.Mapper
 {
@@ -12,9 +13,10 @@ namespace MTWireGuard.Application.Mapper
     {
         private readonly IServiceProvider _provider;
         private IMemoryCache _memoryCache;
+        private ILogger _logger;
         private DBContext _db;
         private Dictionary<int, WGServerDBModel> _serverCache;
-        private Dictionary<int, IPPoolViewModel> _ipPoolCache;
+        private List<IPPoolViewModel> _ipPoolCache;
         private DNS _dnsCache;
         private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
         public ServerMapping(IServiceProvider provider)
@@ -59,33 +61,42 @@ namespace MTWireGuard.Application.Mapper
         {
             _db = Provider.GetService<DBContext>();
             _memoryCache = Provider.GetService<IMemoryCache>();
+            _logger = Provider.GetService<ILogger>();
         }
 
         private void UpdateCache()
         {
-            _serverCache = _memoryCache.GetOrCreate(
-                "DBServers",
-                cacheEntry =>
-                {
-                    cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
-                    return _db.Servers.ToDictionary(s => s.Id);
-                });
-            _ipPoolCache = _memoryCache.GetOrCreate(
-                "IPPools",
-                cacheEntry =>
-                {
-                    var api = Provider.GetService<IMikrotikRepository>();
-                    cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
-                    return api.GetIPPools().Result.ToDictionary(i => i.Id);
-                });
-            _dnsCache = _memoryCache.GetOrCreate(
-                "DNS",
-                cacheEntry =>
-                {
-                    var api = Provider.GetService<IMikrotikRepository>();
-                    cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
-                    return api.GetDNS().Result;
-                });
+            try
+            {
+                _memoryCache.Remove("IPPools");
+                _serverCache = _memoryCache.GetOrCreate(
+                    "DBServers",
+                    cacheEntry =>
+                    {
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        return _db.Servers.ToDictionary(s => s.Id);
+                    });
+                _ipPoolCache = _memoryCache.GetOrCreate(
+                    "IPPools",
+                    cacheEntry =>
+                    {
+                        using var api = Provider.GetService<IMikrotikRepository>();
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        return api.GetIPPools().Result;
+                    });
+                _dnsCache = _memoryCache.GetOrCreate(
+                    "DNS",
+                    cacheEntry =>
+                    {
+                        using var api = Provider.GetService<IMikrotikRepository>();
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+                        return api.GetDNS().Result;
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error updating cache");
+            }
         }
 
         private WGServerDBModel GetDBServer(WGServer source)
@@ -127,7 +138,7 @@ namespace MTWireGuard.Application.Mapper
             var dbItem = GetDBServer(source);
             if (dbItem == null || dbItem.IPPoolId == null)
                 return string.Empty;
-            _ipPoolCache.TryGetValue((int)dbItem.IPPoolId, out var ipPool);
+            var ipPool = _ipPoolCache.Find(p => p.Id == dbItem.IPPoolId);
             return ipPool != null ? ipPool.Ranges.FirstOrDefault() : string.Empty;
         }
     }

@@ -57,6 +57,8 @@ internal class Program
 
         app.MapRazorPages();
 
+        app.UseWebSockets();
+
         app.
             MapGroup("/api/").
             MapGeneralApi();

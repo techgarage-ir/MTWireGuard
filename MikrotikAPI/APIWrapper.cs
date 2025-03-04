@@ -33,8 +33,8 @@ namespace MikrotikAPI
 
         public async Task<WGServer> GetServer(string Name)
         {
-            var servers = await GetServersAsync();
-            return servers.Find(s => s.Name == Name);
+            var json = await SendGetRequestAsync(Endpoints.Wireguard + "?name=" + Name);
+            return json.ToModel<WGServer[]>().FirstOrDefault();
         }
 
         public async Task<List<ServerTraffic>> GetServersTraffic()
@@ -80,6 +80,12 @@ namespace MikrotikAPI
         {
             var users = await GetUsersAsync();
             return users.Find(u => u.Id == id);
+        }
+
+        public async Task<WGPeer> GetUserByPublicKey(string key)
+        {
+            var json = await SendGetRequestAsync(Endpoints.WireguardPeers + "?public-key=" + key);
+            return json.ToModel<WGPeer[]>().FirstOrDefault();
         }
 
         public async Task<WGPeerLastHandshake> GetUserHandshake(string id)

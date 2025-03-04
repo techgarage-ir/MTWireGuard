@@ -9,6 +9,11 @@ using MTWireGuard.Application.Utils;
 using NetTools;
 using QRCoder;
 using Serilog;
+using System;
+using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MTWireGuard.Application.Services
 {
@@ -117,6 +122,154 @@ namespace MTWireGuard.Application.Services
                 $"Endpoint = {Endpoint}{Environment.NewLine}" +
                 $"PublicKey = {Server?.PublicKey ?? ""}";
         }
+        public async Task<string> GetUserV2rayQRCodeBase64(int id)
+        {
+            WGPeerViewModel User = await GetUser(id);
+            WGServerViewModel Server = await GetServer(User.Interface);
+            string IP = Environment.GetEnvironmentVariable("MT_PUBLIC_IP"),
+                Endpoint = Server != null ? $"{IP}:{Server.ListenPort}" : "";
+
+            string config = $"wireguard://{User.PrivateKey}@{Endpoint}?address={User.IPAddress ?? "0.0.0.0/0"}&publickey={Server?.PublicKey ?? ""}&mtu={Server?.MTU ?? 1420}#{User.Name}";
+
+            using QRCodeGenerator qrGenerator = new();
+            using QRCodeData qrCodeData = qrGenerator.CreateQrCode(config, QRCodeGenerator.ECCLevel.Q);
+            using PngByteQRCode qrCode = new(qrCodeData);
+            var QR = qrCode.GetGraphic(20);
+            return Convert.ToBase64String(QR);
+        }
+        public async Task<CreationResult> ImportUsers(List<UserImportModel> users, WebSocket socket)
+        {
+            var existingUsers = await GetUsersAsync();
+            int total = users.Count, inserted = 0, updated = 0, warning = 0, failed = 0, processed = 0;
+            foreach (var user in users)
+            {
+                bool built = false;
+                // send state to client
+                int progress = (int)((++processed) / (double)total * 100);
+
+                // Send progress update to WebSocket
+                if (socket.State == WebSocketState.Open)
+                {
+                    var progressMessage = new { progress };
+                    var progressJson = System.Text.Json.JsonSerializer.Serialize(progressMessage);
+                    var progressBytes = Encoding.UTF8.GetBytes(progressJson);
+                    var arraySegment = new ArraySegment<byte>(progressBytes, 0, progressBytes.Length);
+                    await socket.SendAsync(arraySegment,
+                                        WebSocketMessageType.Text,
+                                        true,
+                                        CancellationToken.None);
+                }
+                else
+                {
+                    logger.Error("Socket Issue", socket);
+                }
+
+                int userId = 0;
+                var existing = existingUsers.Find(u => u.PublicKey == user.PublicKey);
+                if (existing != null) // user exists in system
+                {
+                    userId = existing.Id;
+                    var update = await UpdateUser(new UserUpdateModel()
+                    {
+                        Id = userId,
+                        AllowedAddress = user.AllowedAddress,
+                        AllowedIPs = user.AllowedIPs,
+                        DNSAddress = user.DNSAddress,
+                        Expire = DateTime.Parse(user.Expire),
+                        Interface = user.Interface,
+                        IPAddress = user.IPAddress,
+                        Name = user.Name,
+                        PrivateKey = user.PrivateKey,
+                        PublicKey = user.PublicKey,
+                        Traffic = user.Traffic
+                    });
+                    built = update.Code == "200";
+                    if (built) updated++;
+                    else
+                    {
+                        failed++;
+                        continue;
+                    }
+                }
+                else
+                {
+                    var add = await CreateUser(new UserCreateModel()
+                    {
+                        AllowedAddress = user.AllowedAddress,
+                        AllowedIPs = user.AllowedIPs,
+                        DNSAddress = user.DNSAddress,
+                        Expire = DateTime.Parse(user.Expire),
+                        Interface = user.Interface,
+                        IPAddress = user.IPAddress,
+                        Name = user.Name,
+                        PrivateKey = user.PrivateKey,
+                        PublicKey = user.PublicKey,
+                        Traffic = user.Traffic,
+                        Disabled = !user.Enabled
+                    });
+                    built = add.Code == "200";
+                    if (built) inserted++;
+                    else
+                    {
+                        failed++;
+                        continue;
+                    }
+                }
+                if (built)
+                {
+                    var mtUser = await wrapper.GetUserByPublicKey(user.PublicKey);
+                    var dbUser = mtUser != null ? dbContext.Users.FirstOrDefault(u => u.Id == ConverterUtil.ParseEntityID(mtUser.Id)) : null;
+                    var userTraffic = mtUser != null ? dbContext.LastKnownTraffic.FirstOrDefault(t => t.UserID == ConverterUtil.ParseEntityID(mtUser.Id)) : null;
+                    if (dbUser != null)
+                    {
+                        dbUser.TX = user.UploadBytes;
+                        dbUser.RX = user.DownloadBytes;
+
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        logger.Error("user #{uid}{user} doesn't exist on DB!", ConverterUtil.ParseEntityID(mtUser.Id), user);
+                        warning++;
+                    }
+                    if (userTraffic != null)
+                    {
+                        userTraffic.TX = user.UploadBytes;
+                        userTraffic.RX = user.DownloadBytes;
+
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        logger.Error("user #{uid}{user} doesn't exist on traffic DB!", ConverterUtil.ParseEntityID(mtUser.Id), user);
+                        warning++;
+                    }
+                }
+            }
+            // Send finish message to WebSocket
+            if (socket.State == WebSocketState.Open)
+            {
+                bool succeed = true;
+                var progressMessage = new { succeed };
+                var progressJson = System.Text.Json.JsonSerializer.Serialize(progressMessage);
+                var progressBytes = Encoding.UTF8.GetBytes(progressJson);
+                var arraySegment = new ArraySegment<byte>(progressBytes, 0, progressBytes.Length);
+                await socket.SendAsync(arraySegment,
+                                    WebSocketMessageType.Text,
+                                    true,
+                                    CancellationToken.None);
+            }
+            else
+            {
+                logger.Warning("Socket Issue", socket);
+            }
+            return new()
+            {
+                Code = "200",
+                Title = "Import users!",
+                Description = $"Imported: {inserted}<br>Updated: {updated}<hr>Warning: {warning}<br>Failed: {failed}<hr>Total: {total}"
+            };
+        }
         public async Task<string> GetQRCodeBase64(int id)
         {
             string config = await GetUserTunnelConfig(id);
@@ -220,7 +373,7 @@ namespace MTWireGuard.Application.Services
             var user = mapper.Map<MikrotikAPI.Models.WGPeerCreateModel>(peer);
             var usedIPs = (await GetUsersAsync()).Where(u => u.Interface == peer.Interface).Select(u => u.IPAddress);
             var server = await GetServer(peer.Interface);
-            string ipAddress = "0.0.0.0/0";
+            string ipAddress = peer.IPAddress ?? "0.0.0.0/0";
             if (peer.InheritIP && !string.IsNullOrWhiteSpace(server.IPPool))
             {
                 var range = IPAddressRange.Parse(server.IPPool);
@@ -431,6 +584,131 @@ namespace MTWireGuard.Application.Services
                 }
             }
             return mapper.Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> ImportServers(List<ServerImportModel> servers, WebSocket socket)
+        {
+            var existingServers = await GetServersAsync();
+            int total = servers.Count, inserted = 0, updated = 0, warning = 0, failed = 0, processed = 0;
+            foreach (var server in servers)
+            {
+                bool built = false;
+                // send state to client
+                int progress = (int)((++processed) / (double)total * 100);
+
+                // Send progress update to WebSocket
+                if (socket.State == WebSocketState.Open)
+                {
+                    var progressMessage = new { progress };
+                    var progressJson = System.Text.Json.JsonSerializer.Serialize(progressMessage);
+                    var progressBytes = Encoding.UTF8.GetBytes(progressJson);
+                    var arraySegment = new ArraySegment<byte>(progressBytes, 0, progressBytes.Length);
+                    await socket.SendAsync(arraySegment,
+                                        WebSocketMessageType.Text,
+                                        true,
+                                        CancellationToken.None);
+                }
+                else
+                {
+                    logger.Error("Socket Issue", socket);
+                }
+
+                int serverId = 0;
+                var existing = existingServers.Find(u => u.PrivateKey == server.PrivateKey);
+                if (!string.IsNullOrEmpty(server.IPPool) && server.IPPoolId == 0) // IPPool not exists
+                {
+                    var addPool = await CreateIPPool(new()
+                    {
+                        Name = $"{server.Name}Pool",
+                        Ranges = server.IPPool
+                    });
+                    if (addPool.Code != "200")
+                    {
+                        logger.Error("IP Pool {IPPool} can't be created! {error}, {description}", server.IPPool, addPool.Title, addPool.Description);
+                        warning++;
+                    }
+                    else
+                    {
+                        var pools = await GetIPPools(); // to be checked
+                        server.IPPoolId = pools.FirstOrDefault(p => p.Name == $"{server.Name}Pool").Id;
+                    }
+                }
+                else
+                {
+                    var pools = await GetIPPools();
+                    var pool = pools.FirstOrDefault(p => p.Id == server.IPPoolId);
+                    server.IPPoolId = pool.Id;
+                    logger.Warning("IP Pool exists {pool}", pool);
+                }
+                if (existing != null) // server exists in system
+                {
+                    serverId = existing.Id;
+                    var update = await UpdateServer(new ServerUpdateModel()
+                    {
+                        Id = serverId,
+                        Name = server.Name,
+                        IPAddress = server.IPAddress,
+                        DNSAddress = server.DNSAddress,
+                        PrivateKey = server.PrivateKey,
+                        MTU = server.MTU,
+                        ListenPort = server.ListenPort,
+                        UseIPPool = server.UseIPPool,
+                        IPPoolId = server.IPPoolId
+                    });
+                    built = update.Code == "200";
+                    if (built) updated++;
+                    else
+                    {
+                        failed++;
+                        continue;
+                    }
+                }
+                else
+                {
+                    var add = await CreateServer(new ServerCreateModel()
+                    {
+                        DNSAddress = server.DNSAddress,
+                        IPAddress = server.IPAddress,
+                        Name = server.Name,
+                        PrivateKey = server.PrivateKey,
+                        Enabled = server.Enabled,
+                        ListenPort = server.ListenPort.ToString(),
+                        MTU = server.MTU.ToString(),
+                        UseIPPool = server.UseIPPool,
+                        IPPoolId = server.IPPoolId
+                    });
+                    built = add.Code == "200";
+                    if (built) inserted++;
+                    else
+                    {
+                        failed++;
+                        continue;
+                    }
+                }
+            }
+            // Send finish message to WebSocket
+            if (socket.State == WebSocketState.Open)
+            {
+                bool succeed = true;
+                var progressMessage = new { succeed };
+                var progressJson = System.Text.Json.JsonSerializer.Serialize(progressMessage);
+                var progressBytes = Encoding.UTF8.GetBytes(progressJson);
+                var arraySegment = new ArraySegment<byte>(progressBytes, 0, progressBytes.Length);
+                await socket.SendAsync(arraySegment,
+                                    WebSocketMessageType.Text,
+                                    true,
+                                    CancellationToken.None);
+            }
+            else
+            {
+                logger.Warning("Socket Issue", socket);
+            }
+            return new()
+            {
+                Code = "200",
+                Title = "Import users!",
+                Description = $"Imported: {inserted}<br>Updated: {updated}<hr>Failed: {failed}<hr>Total: {total}"
+            };
         }
 
         public async Task<CreationResult> EnableServer(int id)

@@ -1,6 +1,7 @@
 ﻿using MikrotikAPI.Models;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
+using System.Net.WebSockets;
 
 namespace MTWireGuard.Application.Repositories
 {
@@ -18,6 +19,7 @@ namespace MTWireGuard.Application.Repositories
         Task<WGUserStatistics> GetUsersCount();
         Task<string> GetUserTunnelConfig(int id);
         Task<string> GetQRCodeBase64(int id);
+        Task<string> GetUserV2rayQRCodeBase64(int id);
         Task<MTInfoViewModel> GetInfo();
         Task<IdentityViewModel> GetName();
         Task<CreationResult> SetName(IdentityUpdateModel identity);
@@ -52,5 +54,7 @@ namespace MTWireGuard.Application.Repositories
         Task<List<IPAddressViewModel>> GetIPAddresses();
         Task<List<IPAddressViewModel>> GetServerIP(string Name);
         Task<CreationResult> ResetUserTraffic(int id);
+        Task<CreationResult> ImportUsers(List<UserImportModel> users, WebSocket socket);
+        Task<CreationResult> ImportServers(List<ServerImportModel> servers, WebSocket socket);
     }
 }

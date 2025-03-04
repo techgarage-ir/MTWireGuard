@@ -8,7 +8,10 @@ using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Utils;
+using Serilog;
+using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -116,6 +119,69 @@ namespace MTWireGuard.Application.MinimalAPI
             var reset = await API.ResetUserTraffic(id);
             var message = mapper.Map<ToastMessage>(reset);
             return TypedResults.Ok(message);
+        }
+
+        public static async Task<Ok<string>> GetV2rayQR(
+            [FromServices] IMikrotikRepository API,
+            int id)
+        {
+            string config = await API.GetUserV2rayQRCodeBase64(id);
+            return TypedResults.Ok(config);
+        }
+
+        public static async Task Import(
+            HttpContext context,
+            [FromServices] IMikrotikRepository API,
+            [FromServices] IMapper mapper,
+            [FromServices] ILogger logger)
+        {
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+                try
+                {
+                    // Buffer to receive the data
+                    var buffer = new byte[1024 * 1024]; // Adjust buffer size 1MB
+                    var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        // Convert the received data into ImportUsersRequest
+                        var jsonMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        var request = JsonSerializer.Deserialize<ImportUsersRequest>(jsonMessage, new JsonSerializerOptions()
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (request == null)
+                        {
+                            logger.Warning("Invalid data received, {data}", jsonMessage);
+                            await webSocket.CloseAsync(result?.CloseStatus.Value ?? WebSocketCloseStatus.InvalidPayloadData, result.CloseStatusDescription, CancellationToken.None);
+                        }
+
+                        // Map the request to the model
+                        var model = mapper.Map<List<UserImportModel>>(request.Users);
+                        var make = API.ImportUsers(model, webSocket).Result;
+                        var message = mapper.Map<ToastMessage>(make);
+                        await webSocket.CloseAsync(make.Code == "200" ? WebSocketCloseStatus.NormalClosure : WebSocketCloseStatus.InternalServerError, result.CloseStatusDescription, CancellationToken.None);
+                    }
+                    else
+                    {
+                        logger.Warning("Invalid message type, {wsResult}", result);
+                        await webSocket.CloseAsync(result?.CloseStatus.Value ?? WebSocketCloseStatus.InvalidMessageType, result.CloseStatusDescription, CancellationToken.None);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Error handling WebSocket", ex);
+                    await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, ex.Message, CancellationToken.None);
+                }
+            }
+            else
+            {
+                logger.Warning("Not a WebSocket request {request}", context.Request);
+            }
         }
     }
 }

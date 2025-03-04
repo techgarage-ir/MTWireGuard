@@ -9,13 +9,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MikrotikAPI.Models;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using MTWireGuard.Application.Repositories;
+using MTWireGuard.Application.Utils;
 
 namespace MTWireGuard.Application.Mapper
 {
     public class RequestProfile : Profile
     {
-        public RequestProfile()
+        private readonly IServiceProvider _provider;
+        private ILogger _logger;
+        private IMemoryCache _memoryCache;
+        private DBContext _db;
+        private Dictionary<string, IPPoolViewModel> _poolCache;
+        private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
+        public RequestProfile(IServiceProvider provider)
         {
+            _provider = provider;
+            Init();
             // Peer Request
             CreateMap<CreateClientRequest, UserCreateModel>()
                 .ForMember(dest => dest.Disabled,
@@ -35,6 +48,10 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Expire,
                     opt => opt.MapFrom(src => Convert.ToDateTime(src.Expire)));
 
+            CreateMap<ImportUsersItem, UserImportModel>()
+                .ForMember(dest => dest.Enabled,
+                    opt => opt.MapFrom(src => src.IsEnabled));
+
             // Server Request
             CreateMap<CreateServerRequest, ServerCreateModel>()
                 .ForMember(dest => dest.ListenPort,
@@ -43,6 +60,12 @@ namespace MTWireGuard.Application.Mapper
             CreateMap<UpdateServerRequest, ServerUpdateModel>()
                 .ForMember(dest => dest.ListenPort,
                     opt => opt.MapFrom(src => src.Port));
+
+            CreateMap<ImportServersItem, ServerImportModel>()
+                .ForMember(dest => dest.Enabled,
+                    opt => opt.MapFrom(src => src.IsEnabled))
+                .ForMember(dest => dest.IPPoolId,
+                    opt => opt.MapFrom(src => GetIPPoolId(src)));
 
             // IP Pool Request
             CreateMap<CreatePoolRequest, PoolCreateModel>()
@@ -79,6 +102,40 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => src.Description))
                 .ForMember(dest => dest.Background,
                     opt => opt.MapFrom(src => src.Code == "200" ? "success" : "danger"));
+        }
+
+        private void Init()
+        {
+            _logger = Provider.GetService<ILogger>();
+            _memoryCache = Provider.GetService<IMemoryCache>();
+        }
+
+        private int GetIPPoolId(ImportServersItem source)
+        {
+            try
+            {
+                if (source == null)
+                {
+                    return 0;
+                }
+                _poolCache = _memoryCache.GetOrCreate(
+                    "IPPools",
+                    cacheEntry =>
+                    {
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        var api = Provider.GetService<IMikrotikRepository>();
+                        return api.GetIPPools().Result.ToDictionary(p => p.Ranges.FirstOrDefault() ?? string.Empty);
+                    });
+                if (_poolCache.TryGetValue(source.IPPool, out var ipPool))
+                    return ipPool != null ? ipPool.Id : 0;
+                else
+                    return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Mapping IPPool");
+                return 0;
+            }
         }
     }
 }

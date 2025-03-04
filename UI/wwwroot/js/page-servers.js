@@ -176,6 +176,21 @@ $(function() {
               ]
             },
             {
+                extend: 'collection',
+                className: 'btn-secondary dropdown-toggle rounded-0 me-2',
+                text: '<i class="bx bx-show me-1"></i>Import',
+                buttons: [
+                    {
+                        text: '<i class="bx bx-import me-1"></i>From file',
+                        className: 'btn-secondary',
+                        attr: {
+                            "data-bs-toggle": "modal",
+                            "data-bs-target": "#ImportModal"
+                        }
+                    }
+                ]
+            },
+            {
               text: '<i class="bx bx-plus me-1"></i> <span class="d-none d-lg-inline-block">Add New Server</span>',
               className: 'btn-success create-new',
               attr: {
@@ -448,6 +463,31 @@ $(function() {
       new bootstrap.Modal('#RemoveModal').hide();
     });
   });
+
+    // Import server form
+    $('#importJsonForm').on('submit', e => {
+        let data = new FormData(e.target);
+        let file = data.get('Config');
+        let reader = new FileReader();
+
+        reader.onload = function (event) {
+            const fileContent = event.target.result;
+            try {
+                let json = JSON.parse(fileContent);
+                let config = { servers: json };
+                api.servers.import(config).catch(err => {
+                    console.error(err);
+                    return;
+                }).finally(() => {
+                    dt_basic.ajax.reload();
+                    (new bootstrap.Modal('#ImportModal')).hide();
+                });
+            } catch (error) {
+                console.error('Invalid JSON:', error);
+            }
+        };
+        reader.readAsText(file);
+    });
 });
 
 function toggleDynamicInput(checkbox, element) {

@@ -7,6 +7,10 @@ using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
 using MTWireGuard.Application.Repositories;
+using System.Net.WebSockets;
+using System.Text.Json;
+using System.Text;
+using Serilog;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -68,6 +72,61 @@ namespace MTWireGuard.Application.MinimalAPI
             var active = (!request.Enabled) ? await API.EnableServer(request.Id) : await API.DisableServer(request.Id);
             var message = mapper.Map<ToastMessage>(active);
             return TypedResults.Ok(message);
+        }
+
+        public static async Task Import(
+            HttpContext context,
+            [FromServices] IMikrotikRepository API,
+            [FromServices] IMapper mapper,
+            [FromServices] ILogger logger)
+        {
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+                try
+                {
+                    // Buffer to receive the data
+                    var buffer = new byte[1024 * 1024]; // Adjust buffer size 1MB
+                    var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        // Convert the received data into ImportServersRequest
+                        var jsonMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        var request = JsonSerializer.Deserialize<ImportServersRequest>(jsonMessage, new JsonSerializerOptions()
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (request == null)
+                        {
+                            logger.Warning("Invalid data received, {data}", jsonMessage);
+                            await webSocket.CloseAsync(result?.CloseStatus.Value ?? WebSocketCloseStatus.InvalidPayloadData, result.CloseStatusDescription, CancellationToken.None);
+                        }
+
+                        // Map the request to the model
+                        var model = mapper.Map<List<ServerImportModel>>(request.Servers);
+                        var make = API.ImportServers(model, webSocket).Result;
+                        var message = mapper.Map<ToastMessage>(make);
+                        await webSocket.CloseAsync(make.Code == "200" ? WebSocketCloseStatus.NormalClosure : WebSocketCloseStatus.InternalServerError, result.CloseStatusDescription, CancellationToken.None);
+                    }
+                    else
+                    {
+                        logger.Warning("Invalid message type, {wsResult}", result);
+                        await webSocket.CloseAsync(result?.CloseStatus.Value ?? WebSocketCloseStatus.InvalidMessageType, result.CloseStatusDescription, CancellationToken.None);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Error handling WebSocket");
+                    await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, ex.Message, CancellationToken.None);
+                }
+            }
+            else
+            {
+                logger.Warning("Not a WebSocket request {request}", context.Request);
+            }
         }
     }
 }

@@ -23,6 +23,8 @@ namespace MTWireGuard.Application
         {
             InitializeServices();
 
+            Constants.IPApiSchema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
+
             if (ValidateEnvironmentVariables())
             {
                 LogAndDisplayError("Environment variables are not set!", "Please set \"MT_IP\", \"MT_USER\", \"MT_PASS\", \"MT_PUBLIC_IP\" variables in container environment.");
@@ -65,8 +67,6 @@ namespace MTWireGuard.Application
             }
 
             await EnsureTrafficScripts(ip);
-
-            Constants.IPApiSchema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
 
             IsValid = true;
             return true;
@@ -139,7 +139,6 @@ namespace MTWireGuard.Application
                 {
                     Name = "TrafficUsage",
                     Interval = new TimeSpan(0, 5, 0),
-                    //OnEvent = "SendTrafficUsage",
                     OnEvent = Constants.PeersTrafficUsageScript($"http://{ip}/api/usage"),
                     Policies = ["write", "read", "test", "ftp"],
                     Comment = "update wireguard peers traffic usage"
@@ -150,11 +149,6 @@ namespace MTWireGuard.Application
                     result = create
                 });
             }
-        }
-
-        private static void Shutdown()
-        {
-            Environment.Exit(0);
         }
     }
 }

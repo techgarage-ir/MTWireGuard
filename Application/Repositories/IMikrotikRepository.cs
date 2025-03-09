@@ -1,5 +1,4 @@
-﻿using MikrotikAPI.Models;
-using MTWireGuard.Application.Models;
+﻿using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using System.Net.WebSockets;
 
@@ -53,6 +52,7 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> DeleteIPPool(int id);
         Task<List<IPAddressViewModel>> GetIPAddresses();
         Task<List<IPAddressViewModel>> GetServerIP(string Name);
+        Task<CreationResult> DeleteIPAddress(int id);
         Task<CreationResult> ResetUserTraffic(int id);
         Task<CreationResult> ImportUsers(List<UserImportModel> users, WebSocket socket);
         Task<CreationResult> ImportServers(List<ServerImportModel> servers, WebSocket socket);

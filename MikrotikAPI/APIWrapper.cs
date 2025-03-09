@@ -37,6 +37,12 @@ namespace MikrotikAPI
             return json.ToModel<WGServer[]>().FirstOrDefault();
         }
 
+        public async Task<WGServer> GetServerById(string id)
+        {
+            var json = await SendGetRequestAsync(Endpoints.Wireguard + "/" + id);
+            return json.ToModel<WGServer>();
+        }
+
         public async Task<List<ServerTraffic>> GetServersTraffic()
         {
             var json = await SendRequestBase(RequestMethod.GET, Endpoints.Interface, "{\"stats\", {\".proplist\":\"name, type, rx-byte, tx-byte\"}}");
@@ -62,6 +68,11 @@ namespace MikrotikAPI
                 DefaultValueHandling = DefaultValueHandling.Ignore
             });
             return await UpdateItem(Endpoints.IPAddress, itemJson, ipAddress.Id);
+        }
+
+        public async Task<CreationStatus> DeleteIP(string id)
+        {
+            return await DeleteItem(Endpoints.IPAddress, id);
         }
 
         public async Task<List<IPAddress>> GetServerIPAddress(string Interface)

@@ -7,13 +7,11 @@ using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Utils;
 using NetTools;
+using Newtonsoft.Json;
 using QRCoder;
 using Serilog;
-using System;
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MTWireGuard.Application.Services
 {
@@ -53,6 +51,12 @@ namespace MTWireGuard.Application.Services
             var model = await wrapper.GetServer(Name);
             return mapper.Map<WGServerViewModel>(model);
         }
+        public async Task<WGServerViewModel> GetServer(int id)
+        {
+            var model = await wrapper.GetServerById(ConverterUtil.ParseEntityID(id));
+            return mapper.Map<WGServerViewModel>(model);
+        }
+
         public async Task<List<ServerTrafficViewModel>> GetServersTraffic()
         {
             var model = await wrapper.GetServersTraffic();
@@ -615,30 +619,33 @@ namespace MTWireGuard.Application.Services
 
                 int serverId = 0;
                 var existing = existingServers.Find(u => u.PrivateKey == server.PrivateKey);
-                if (!string.IsNullOrEmpty(server.IPPool) && server.IPPoolId == 0) // IPPool not exists
+                if (server.UseIPPool)
                 {
-                    var addPool = await CreateIPPool(new()
+                    if (!string.IsNullOrEmpty(server.IPPool) && server.IPPoolId == 0) // IPPool not exists
                     {
-                        Name = $"{server.Name}Pool",
-                        Ranges = server.IPPool
-                    });
-                    if (addPool.Code != "200")
-                    {
-                        logger.Error("IP Pool {IPPool} can't be created! {error}, {description}", server.IPPool, addPool.Title, addPool.Description);
-                        warning++;
+                        var addPool = await CreateIPPool(new()
+                        {
+                            Name = $"{server.Name}Pool",
+                            Ranges = server.IPPool
+                        });
+                        if (addPool.Code != "200")
+                        {
+                            logger.Error("IP Pool {IPPool} can't be created! {error}, {description}", server.IPPool, addPool.Title, addPool.Description);
+                            warning++;
+                        }
+                        else
+                        {
+                            var pools = await GetIPPools(); // to be checked
+                            server.IPPoolId = pools.FirstOrDefault(p => p.Name == $"{server.Name}Pool").Id;
+                        }
                     }
-                    else
+                    else // IPPool exists (maybe updated panel)
                     {
-                        var pools = await GetIPPools(); // to be checked
-                        server.IPPoolId = pools.FirstOrDefault(p => p.Name == $"{server.Name}Pool").Id;
+                        var pools = await GetIPPools();
+                        var pool = pools.FirstOrDefault(p => p.Id == server.IPPoolId);
+                        server.IPPoolId = pool.Id;
+                        logger.Warning("IP Pool exists {pool}", pool);
                     }
-                }
-                else
-                {
-                    var pools = await GetIPPools();
-                    var pool = pools.FirstOrDefault(p => p.Id == server.IPPoolId);
-                    server.IPPoolId = pool.Id;
-                    logger.Warning("IP Pool exists {pool}", pool);
                 }
                 if (existing != null) // server exists in system
                 {
@@ -753,14 +760,40 @@ namespace MTWireGuard.Application.Services
 
         public async Task<CreationResult> DeleteServer(int id)
         {
+            var server = await GetServer(id);
+            var ips = await GetServerIP(server.Name);
             var delete = await wrapper.DeleteServer(ConverterUtil.ParseEntityID(id));
             if (delete.Success)
             {
-                var server = await dbContext.Servers.FindAsync(id);
-                if (server != null)
+                logger.ForContext("EntityUpdate", true)
+                  .Information("Operation: {Operation}, Entity: {Entity}, Status: {result}, Time: {Timestamp}",
+                      "DELETE",
+                      JsonConvert.SerializeObject(server),
+                      new
+                      {
+                          Code = delete.Code,
+                          Message = delete.Message,
+                          Detail = delete.Detail,
+                      }, DateTime.UtcNow);
+                var dbServer = await dbContext.Servers.FindAsync(id);
+                if (dbServer != null)
                 {
-                    dbContext.Servers.Remove(server);
+                    dbContext.Servers.Remove(dbServer);
                     await dbContext.SaveChangesAsync();
+                }
+                foreach (var ip in ips)
+                {
+                    var deleteIP = await DeleteIPAddress(ip.Id);
+                    logger.ForContext("EntityUpdate", true)
+                      .Information("Operation: {Operation}, Entity: {Entity}, Status: {result}, Time: {Timestamp}",
+                          "DELETE",
+                          JsonConvert.SerializeObject(ip),
+                          new
+                          {
+                              Code = deleteIP.Code,
+                              Message = deleteIP.Title,
+                              Detail = deleteIP.Description,
+                          }, DateTime.UtcNow);
                 }
             }
             return mapper.Map<CreationResult>(delete);
@@ -885,6 +918,12 @@ namespace MTWireGuard.Application.Services
         {
             var model = await wrapper.GetServerIPAddress(Name);
             return mapper.Map<List<IPAddressViewModel>>(model);
+        }
+
+        public async Task<CreationResult> DeleteIPAddress(int id)
+        {
+            var delete = await wrapper.DeleteIP(ConverterUtil.ParseEntityID(id));
+            return mapper.Map<CreationResult>(delete);
         }
 
         public async Task<CreationResult> ResetUserTraffic(int id)

@@ -4,7 +4,7 @@ const toastContainer = $('.toast-container');
 (function ($) {
     "use strict";
     // Add server input field
-    $('#addServerBtn').on('click', function(e) {
+    $('#addServerBtn').on('click', function (e) {
         addServerInputField();
     });
 
@@ -29,7 +29,7 @@ const toastContainer = $('.toast-container');
             percHDD = data["hdd"]["percentage"],
             cpu = data["cpuLoad"],
             uptime = data["upTime"];
-        
+
         // ProgressBar colors
         let hddColor = "bg-info";
         if (percHDD <= 25) hddColor = "bg-info";
@@ -105,11 +105,11 @@ function addServerInputField(serverAddress = "") {
     var count = $('#serversGroup input').length + 1;
     let value = ` value="${serverAddress}"` ?? "";
     var inputField = '<div class="input-group mb-1">' +
-                        `<input type="text" name="servers[]" class="form-control" ${value} placeholder="Server ${count}" aria-label="DNS Server" aria-describedby="removeField${count}">` +
-                        `<span class="input-group-text text-danger" id="removeField${count}" role="button" onclick="removeServerInputGroup(this)">` +
-                        '<i class="bx bx-minus"></i>' +
-                        '</span>' +
-                    '</div>';
+        `<input type="text" name="servers[]" class="form-control" ${value} placeholder="Server ${count}" aria-label="DNS Server" aria-describedby="removeField${count}">` +
+        `<span class="input-group-text text-danger" id="removeField${count}" role="button" onclick="removeServerInputGroup(this)">` +
+        '<i class="bx bx-minus"></i>' +
+        '</span>' +
+        '</div>';
     $('#serversGroup').append(inputField);
 }
 

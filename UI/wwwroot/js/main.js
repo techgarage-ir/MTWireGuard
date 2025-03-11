@@ -13,13 +13,13 @@ spinner();
 // Back to top button
 $(window).on('scroll', function () {
     if ($(this).scrollTop() > 300) {
-        $('.back-to-top').fadeIn('slow', function() {});
+        $('.back-to-top').fadeIn('slow', function () { });
     } else {
-        $('.back-to-top').fadeOut('slow', function() {});
+        $('.back-to-top').fadeOut('slow', function () { });
     }
 });
 $('.back-to-top').on('click', function () {
-    $("html, body").stop().animate({scrollTop:0}, 'fast', 'swing', function() {});
+    $("html, body").stop().animate({ scrollTop: 0 }, 'fast', 'swing', function () { });
     return false;
 });
 
@@ -33,30 +33,30 @@ $('.sidebar-toggler').on('click', function () {
 $('.password-eye').on('click', function () {
     let icon = $(this).find('i');
     let input = $(this).closest('.form-password-toggle').find('input');
-    
+
     input.attr('type', input.attr('type') === 'password' ? 'text' : 'password');
     icon.toggleClass('bx-hide bx-show-alt');
 });
 
 // Wireguard keygen
 $('.keygen-button').on('click', e => {
-  let dom = $(e.target);
-  let keys = wireguard.generateKeypair();
-  let privateKey = keys.privateKey;
-  let publicKey = keys.publicKey;
-  if (dom) {
-    let frm = dom.closest('form');
-    frm.find('input[name="PrivateKey"]').val(privateKey);
-    frm.find('input[name="PublicKey"]').val(publicKey);
-  }
+    let dom = $(e.target);
+    let keys = wireguard.generateKeypair();
+    let privateKey = keys.privateKey;
+    let publicKey = keys.publicKey;
+    if (dom) {
+        let frm = dom.closest('form');
+        frm.find('input[name="PrivateKey"]').val(privateKey);
+        frm.find('input[name="PublicKey"]').val(publicKey);
+    }
 });
 $('.key-reset-button').on('click', e => {
-  let dom = $(e.target);
-  if (dom) {
-    let frm = dom.closest('form');
-    frm.find('input[name="PrivateKey"]').val('');
-    frm.find('input[name="PublicKey"]').val('');
-  }
+    let dom = $(e.target);
+    if (dom) {
+        let frm = dom.closest('form');
+        frm.find('input[name="PrivateKey"]').val('');
+        frm.find('input[name="PublicKey"]').val('');
+    }
 });
 
 // Logs
@@ -65,27 +65,27 @@ api.config.logs.getAll().then(logs => {
         let topics = ``;
         log.topics.forEach(topic => {
             switch (topic.toLowerCase()) {
-              case 'system':
-                topics += `<span class="badge bg-dark border me-1">${topic}</span>`;
-                break;
-              case 'info':
-                topics += `<span class="badge bg-info border me-1">${topic}</span>`;
-                break;
-              case 'error':
-              case 'critical':
-                topics += `<span class="badge bg-danger border me-1">${topic}</span>`;
-                break;
-              case 'account':
-                topics += `<span class="badge bg-secondary border me-1">${topic}</span>`;
-                break;
-              case 'dhcp':
-              case 'ppp':
-              case 'l2tp':
-              case 'pptp':
-              case 'sstp':
-              default:
-                topics += `<span class="badge bg-light border me-1">${topic}</span>`;
-                break;
+                case 'system':
+                    topics += `<span class="badge bg-dark border me-1">${topic}</span>`;
+                    break;
+                case 'info':
+                    topics += `<span class="badge bg-info border me-1">${topic}</span>`;
+                    break;
+                case 'error':
+                case 'critical':
+                    topics += `<span class="badge bg-danger border me-1">${topic}</span>`;
+                    break;
+                case 'account':
+                    topics += `<span class="badge bg-secondary border me-1">${topic}</span>`;
+                    break;
+                case 'dhcp':
+                case 'ppp':
+                case 'l2tp':
+                case 'pptp':
+                case 'sstp':
+                default:
+                    topics += `<span class="badge bg-light border me-1">${topic}</span>`;
+                    break;
             }
         });
         let el = `

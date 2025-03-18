@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using System.Xml.Linq;
 
 namespace MTWireGuard.Application.Models.Requests
 {
@@ -26,5 +25,6 @@ namespace MTWireGuard.Application.Models.Requests
         public bool InheritIP { get; set; }
         public bool InheritDNS { get; set; }
         public string? DNSAddress { get; set; }
+        public string? Bandwidth { get; set; }
     }
 }

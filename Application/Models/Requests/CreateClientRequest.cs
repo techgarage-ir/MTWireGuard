@@ -21,5 +21,6 @@
         public bool InheritIP { get; set; }
         public bool InheritDNS { get; set; }
         public string? DNSAddress { get; set; }
+        public string? Bandwidth { get; set; }
     }
 }

@@ -185,7 +185,8 @@ namespace MTWireGuard.Application.Services
                         Name = user.Name,
                         PrivateKey = user.PrivateKey,
                         PublicKey = user.PublicKey,
-                        Traffic = user.Traffic
+                        Traffic = user.Traffic,
+                        Bandwidth = user.Bandwidth.Replace("B", string.Empty).Replace(" ", string.Empty),
                     });
                     built = update.Code == "200";
                     if (built) updated++;
@@ -416,22 +417,43 @@ namespace MTWireGuard.Application.Services
                 }) : null;
                 if (deleteScheduler == null || deleteScheduler.Code == "200")
                 {
-                    await dbContext.Users.AddAsync(new()
+                    var userQueue = string.IsNullOrEmpty(peer.Bandwidth) ? null : await CreateSimpleQueue(new()
                     {
-                        Id = userID,
-                        TrafficLimit = peer.Traffic,
-                        AllowedIPs = peer.AllowedIPs ?? "0.0.0.0/0",
-                        InheritDNS = inheritDNS,
-                        InheritIP = peer.InheritIP
+                        Name = $"QueueUser{userID}",
+                        MaxLimit = peer.Bandwidth,
+                        Target = ipAddress,
+                        Comment = $"Bandwidth controller Wireguard Peer: {peer.Name}"
                     });
-                    await dbContext.LastKnownTraffic.AddAsync(new()
+                    if (userQueue == null || userQueue.Code == "200")
                     {
-                        UserID = userID,
-                        RX = 0,
-                        TX = 0,
-                        CreationTime = DateTime.Now
-                    });
-                    await dbContext.SaveChangesAsync();
+                        await dbContext.Users.AddAsync(new()
+                        {
+                            Id = userID,
+                            TrafficLimit = peer.Traffic,
+                            AllowedIPs = peer.AllowedIPs ?? "0.0.0.0/0",
+                            InheritDNS = inheritDNS,
+                            InheritIP = peer.InheritIP
+                        });
+                        await dbContext.LastKnownTraffic.AddAsync(new()
+                        {
+                            UserID = userID,
+                            RX = 0,
+                            TX = 0,
+                            CreationTime = DateTime.Now
+                        });
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else if (userQueue != null)
+                    {
+                        var deleteUser = await DeleteUser(userID);
+                        logger.Error("Failed to create queue with code: {code}, title: {title}, description: {desc}", userQueue.Code, userQueue.Title, userQueue.Description);
+                        return new()
+                        {
+                            Code = "500",
+                            Title = "Failed to create user",
+                            Description = "Failed to create bandwidth queue"
+                        };
+                    }
                 }
                 else if (deleteScheduler != null)
                 {
@@ -459,9 +481,11 @@ namespace MTWireGuard.Application.Services
             if (mtUpdate.Success)
             {
                 var scheduler = await GetSchedulerByName($"DisableUser{user.Id}");
+                var queue = await GetSimpleQueueByName($"QueueUser{user.Id}");
                 var exists = await dbContext.Users.FindAsync(user.Id);
                 dbContext.ChangeTracker.Clear();
                 var schedulerId = scheduler?.Id ?? 0;
+                var queueId = queue?.Id ?? 0;
                 if (user.Expire != new DateTime())
                 {
                     var deleteScheduler = scheduler == null ?
@@ -493,6 +517,33 @@ namespace MTWireGuard.Application.Services
                     }
                 }
                 var expireID = (user.Expire != new DateTime()) ? schedulerId : 0;
+                if (!string.IsNullOrEmpty(user.Bandwidth))
+                {
+                    var userQueue = queue == null ?
+                        await CreateSimpleQueue(new()
+                        {
+                            Name = $"QueueUser{user.Id}",
+                            MaxLimit = user.Bandwidth,
+                            Target = ipAddress,
+                            Comment = $"Bandwidth controller Wireguard Peer: {user.Name}"
+                        }) :
+                        await UpdateSimpleQueue(new()
+                        {
+                            Id = ConverterUtil.ParseEntityID(queue.Id),
+                            MaxLimit = user.Bandwidth,
+                            Target = ipAddress,
+                            Comment = $"Bandwidth controller Wireguard Peer: {user.Name}"
+                        });
+                    if (userQueue.Code == "200")
+                    {
+                        queue = await GetSimpleQueueByName($"QueueUser{user.Id}");
+                        queueId = queue.Id;
+                    }
+                    else
+                    {
+                        logger.Error("Failed to create/update queue with code: {code}, title: {title}, description: {desc}", userQueue.Code, userQueue.Title, userQueue.Description);
+                    }
+                }
                 if (exists != null)
                 {
                     dbContext.Users.Update(new()
@@ -805,14 +856,11 @@ namespace MTWireGuard.Application.Services
             if (delete.Success)
             {
                 var user = await dbContext.Users.FindAsync(id);
-                if (user != null)
-                {
-                    var schedulers = await wrapper.GetSchedulers();
-                    var scheduler = schedulers.Find(s => s.Name == $"DisableUser{id}");
-                    if (scheduler != null)
-                    await wrapper.DeleteScheduler(scheduler.Id);
-                    dbContext.Users.Remove(user);
-                }
+                var scheduler = await GetSchedulerByName($"DisableUser{id}");
+                var queue = await GetSimpleQueueByName($"QueueUser{id}");
+                if (scheduler != null) await wrapper.DeleteScheduler(ConverterUtil.ParseEntityID(scheduler.Id));
+                if (queue != null) await wrapper.DeleteSimpleQueue(ConverterUtil.ParseEntityID(queue.Id));
+                if (user != null) dbContext.Users.Remove(user);
                 await dbContext.LastKnownTraffic.Where(t => t.UserID == id).ExecuteDeleteAsync();
                 await dbContext.DataUsages.Where(d => d.UserID == id).ExecuteDeleteAsync();
                 await dbContext.SaveChangesAsync();
@@ -967,6 +1015,40 @@ namespace MTWireGuard.Application.Services
             }
         }
 
+        // Simple Queue
+        public async Task<List<SimpleQueueViewModel>> GetSimpleQueues()
+        {
+            var model = await wrapper.GetSimpleQueues();
+            return Map<List<SimpleQueueViewModel>>(model);
+        }
+
+        public async Task<SimpleQueueViewModel> GetSimpleQueueByName(string name)
+        {
+            var model = await wrapper.GetSimpleQueueByName(name);
+            return string.IsNullOrEmpty(model.Id) ? null : Map<SimpleQueueViewModel>(model);
+        }
+
+        public async Task<CreationResult> CreateSimpleQueue(SimpleQueueCreateModel simpleQueue)
+        {
+            var queue = Map<SimpleQueueCreateModel>(simpleQueue);
+            var model = await wrapper.CreateSimpleQueue(queue);
+            return Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> UpdateSimpleQueue(SimpleQueueUpdateModel simpleQueue)
+        {
+            var queue = Map<SimpleQueueUpdateModel>(simpleQueue);
+            var model = await wrapper.UpdateSimpleQueue(queue);
+            return Map<CreationResult>(model);
+        }
+
+        public async Task<CreationResult> DeleteSimpleQueue(int id)
+        {
+            var delete = await wrapper.DeleteSimpleQueue(ConverterUtil.ParseEntityID(id));
+            return Map<CreationResult>(delete);
+        }
+
+        // General
         private T Map<T>(object source)
         {
             try

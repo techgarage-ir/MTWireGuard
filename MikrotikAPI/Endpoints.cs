@@ -17,6 +17,7 @@
         public const string DNS = "ip/dns";
         public const string IPPool = "ip/pool";
         public const string IPAddress = "ip/address";
+        public const string Queue = "queue/simple";
         public static string Empty => string.Empty;
     }
 

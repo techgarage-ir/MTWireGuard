@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MTWireGuard.Application.Utils
+﻿namespace MTWireGuard.Application.Utils
 {
     public class ConverterUtil
     {
@@ -111,6 +105,22 @@ namespace MTWireGuard.Application.Utils
             return string.Format("{0:n" + decimalPlaces + "} {1}",
                 adjustedSize,
                 Constants.SizeSuffixes[mag]);
+        }
+        public static string ConvertQueueByteSize(ulong value)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            if (value == 0) { return "0"; }
+
+            double size = value;
+            int unitIndex = 0;
+
+            while (size >= 1000 && unitIndex < Constants.SizeSuffixes.Length - 1)
+            {
+                size /= 1000;
+                unitIndex++;
+            }
+
+            return $"{size:0.##} {Constants.SizeSuffixes[unitIndex]}";
         }
 
         public static ulong GigabyteToByte(int gigabyte)

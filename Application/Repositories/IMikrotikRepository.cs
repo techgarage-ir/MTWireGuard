@@ -1,4 +1,5 @@
-﻿using MTWireGuard.Application.Models;
+﻿using MikrotikAPI.Models;
+using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using System.Net.WebSockets;
 
@@ -56,5 +57,11 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> ResetUserTraffic(int id);
         Task<CreationResult> ImportUsers(List<UserImportModel> users, WebSocket socket);
         Task<CreationResult> ImportServers(List<ServerImportModel> servers, WebSocket socket);
+        // Simple Queue
+        Task<List<SimpleQueueViewModel>> GetSimpleQueues();
+        Task<SimpleQueueViewModel> GetSimpleQueueByName(string name);
+        Task<CreationResult> CreateSimpleQueue(SimpleQueueCreateModel simpleQueue);
+        Task<CreationResult> UpdateSimpleQueue(SimpleQueueUpdateModel simpleQueue);
+        Task<CreationResult> DeleteSimpleQueue(int id);
     }
 }

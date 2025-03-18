@@ -103,6 +103,33 @@
                 </div>
             </div>
             <div class="mb-3">
+                <label class="form-label" for="add-bandwidth">Bandwidth (Upload/Download)</label>
+                <div class="d-flex gap-3">
+                    <div class="input-group">
+                        <input id="add-bandwidth-upload" name="BandwidthUpload" type="number" class="form-control" aria-label="Upload Bandwidth" aria-describedby="add-bw-up-unit" placeholder="UP" min="0" max="1024">
+                        <select id="add-bw-up-unit" name="BandwidthUploadUnit" class="form-select input-group-text text-start">
+                            <option value="">b</option>
+                            <option value="K">Kb</option>
+                            <option value="M">Mb</option>
+                            <option value="G">Gb</option>
+                            <option value="T">Tb</option>
+                            <option value="P">Pb</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input id="add-bandwidth-download" name="BandwidthDownload" type="number" class="form-control" aria-label="Download Bandwidth" aria-describedby="add-bw-down-unit" placeholder="DOWN" min="0" max="1024">
+                        <select id="add-bw-down-unit" name="BandwidthDownloadUnit" class="form-select input-group-text text-start">
+                            <option value="">b</option>
+                            <option value="K">Kb</option>
+                            <option value="M">Mb</option>
+                            <option value="G">Gb</option>
+                            <option value="T">Tb</option>
+                            <option value="P">Pb</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
                 <label class="form-label" for="add-enabled">Enabled</label>
                 <button type="button" class="btn btn-toggle active" id="add-enabled" name="Enabled" data-bs-toggle="button" aria-pressed="true" autocomplete="off">
                     <div class="handle"></div>

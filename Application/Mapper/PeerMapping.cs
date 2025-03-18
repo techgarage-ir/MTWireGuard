@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using MikrotikAPI.Models;
@@ -19,6 +18,8 @@ namespace MTWireGuard.Application.Mapper
         private Dictionary<int, WGPeerDBModel> _userCache;
         private Dictionary<int, WGPeerLastHandshakeViewModel> _handshakeCache;
         private Dictionary<int, SchedulerViewModel> _schedulerCache;
+        private Dictionary<int, SimpleQueueViewModel> _queueCache;
+
         private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
 
         public PeerMapping(IServiceProvider provider)
@@ -60,7 +61,9 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Traffic,
                     opt => opt.MapFrom(src => GetPeerTraffic(src)))
                 .ForMember(dest => dest.TrafficUsed,
-                    opt => opt.MapFrom(src => GetPeerTrafficUsage(src)));
+                    opt => opt.MapFrom(src => GetPeerTrafficUsage(src)))
+                .ForMember(dest => dest.Bandwidth,
+                    opt => opt.MapFrom(src => GetPeerQueue(src)));
 
             // WGPeer
             CreateMap<UserCreateModel, WGPeerCreateModel>()
@@ -194,6 +197,35 @@ namespace MTWireGuard.Application.Mapper
         {
             var expireDate = GetPeerExpire(source);
             return !string.IsNullOrWhiteSpace(expireDate) ? expireDate : "Unlimited";
+        }
+
+        private string GetPeerQueue(WGPeer source)
+        {
+            try
+            {
+                if (source == null)
+                {
+                    return string.Empty;
+                }
+                var userId = ConverterUtil.ParseEntityID(source.Id);
+                _queueCache = _memoryCache.GetOrCreate(
+                    "Queues",
+                    cacheEntry =>
+                    {
+                        cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(3);
+                        var api = Provider.GetService<IMikrotikRepository>();
+                        return api.GetSimpleQueues().Result.Where(s => s.Name.StartsWith("QueueUser")).ToDictionary(s => int.Parse(s.Name[9..]));
+                    });
+                if (_queueCache.TryGetValue(userId, out var queue))
+                    return queue != null ? $"{ConverterUtil.ConvertQueueByteSize(queue.MaxLimitUpload)}/{ConverterUtil.ConvertQueueByteSize(queue.MaxLimitDownload)}" : "Unlimited";
+                else
+                    return "Unlimited";
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Mapping Queue");
+                return "Unlimited";
+            }
         }
     }
 }

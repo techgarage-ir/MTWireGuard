@@ -335,6 +335,40 @@ namespace MikrotikAPI
             return await DeleteItem(Endpoints.IPPool, id);
         }
 
+        // Simple Queue
+        public async Task<List<SimpleQueue>> GetSimpleQueues()
+        {
+            var json = await SendGetRequestAsync(Endpoints.Queue);
+            return json.ToModel<List<SimpleQueue>>();
+        }
+
+        public async Task<SimpleQueue> GetSimpleQueueByName(string name)
+        {
+            var json = await SendGetRequestAsync($"{Endpoints.Queue}/{name}");
+            return json.ToModel<SimpleQueue>();
+        }
+
+        public async Task<CreationStatus> CreateSimpleQueue(SimpleQueueCreateModel simpleQueue)
+        {
+            return await CreateItem<SimpleQueue>(Endpoints.Queue, simpleQueue);
+        }
+
+        public async Task<CreationStatus> UpdateSimpleQueue(SimpleQueueUpdateModel simpleQueue)
+        {
+            var itemJson = JObject.FromObject(simpleQueue, new JsonSerializer
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            });
+            return await UpdateItem(Endpoints.Queue, itemJson, simpleQueue.Id);
+        }
+
+        public async Task<CreationStatus> DeleteSimpleQueue(string id)
+        {
+            return await DeleteItem(Endpoints.Queue, id);
+        }
+
+        // Base Methods
         private async Task<CreationStatus> CreateItem<T>(string Endpoint, object ItemCreateModel)
         {
             var jsonData = JObject.Parse(JsonConvert.SerializeObject(ItemCreateModel, new JsonSerializerSettings

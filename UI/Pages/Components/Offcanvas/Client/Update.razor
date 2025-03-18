@@ -106,6 +106,33 @@
                     <span class="input-group-text" id="edit-gigabyte">GB</span>
                 </div>
             </div>
+            <div class="mb-3">
+                <label class="form-label" for="edit-bandwidth">Bandwidth (Upload/Download)</label>
+                <div class="d-flex gap-3">
+                    <div class="input-group">
+                        <input id="edit-bandwidth-upload" name="BandwidthUpload" type="number" class="form-control" aria-label="Upload Bandwidth" aria-describedby="edit-bw-up-unit" placeholder="UP" min="0" max="1024" required>
+                        <select id="edit-bw-up-unit" name="BandwidthUploadUnit" class="form-select input-group-text text-start">
+                            <option value="">b</option>
+                            <option value="K">Kb</option>
+                            <option value="M">Mb</option>
+                            <option value="G">Gb</option>
+                            <option value="T">Tb</option>
+                            <option value="P">Pb</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input id="edit-bandwidth-download" name="BandwidthDownload" type="number" class="form-control" aria-label="Download Bandwidth" aria-describedby="edit-bw-down-unit" placeholder="DOWN" min="0" max="1024" required>
+                        <select id="edit-bw-down-unit" name="BandwidthDownloadUnit" class="form-select input-group-text text-start">
+                            <option value="">b</option>
+                            <option value="K">Kb</option>
+                            <option value="M">Mb</option>
+                            <option value="G">Gb</option>
+                            <option value="T">Tb</option>
+                            <option value="P">Pb</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="btn btn-success me-sm-3 me-1 data-submit">Submit</button>
             <button type="reset" class="btn btn-danger" data-bs-dismiss="offcanvas">Cancel</button>
         </form>

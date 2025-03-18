@@ -39,6 +39,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public string DNSAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
+        public string Bandwidth { get; set; }
     }
 
     public class UserCreateModel
@@ -61,6 +62,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public bool InheritAllowedAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
+        public string? Bandwidth { get; set; }
     }
 
     public class UserUpdateModel
@@ -83,6 +85,7 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public bool InheritAllowedAddress { get; set; }
         public bool InheritDNS { get; set; }
         public bool InheritIP { get; set; }
+        public string Bandwidth { get; set; }
     }
 
     public class WGPeerLastHandshakeViewModel
@@ -108,5 +111,6 @@ namespace MTWireGuard.Application.Models.Mikrotik
         public int Traffic { get; set; }
         public string IPAddress { get; set; }
         public string DNSAddress { get; set; }
+        public string Bandwidth { get; set; }
     }
 }

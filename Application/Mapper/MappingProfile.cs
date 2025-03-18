@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
+using MikrotikAPI.Models;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Requests;
 using MTWireGuard.Application.Utils;
+using Serilog;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -10,8 +13,15 @@ namespace MTWireGuard.Application.Mapper
 {
     public class MappingProfile : Profile
     {
-        public MappingProfile()
+        private readonly IServiceProvider _provider;
+        private ILogger _logger;
+
+        private IServiceProvider Provider => _provider.CreateScope().ServiceProvider;
+        public MappingProfile(IServiceProvider provider)
         {
+            _provider = provider;
+            Init();
+
             // Logs
             CreateMap<MikrotikAPI.Models.Log, LogViewModel>()
                 .ForMember(dest => dest.Id,
@@ -112,7 +122,7 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => ConvertToDateTime(src.LastStarted)))
                 .ForMember(dest => dest.Policies,
                     opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()));
-            CreateMap<ScriptCreateModel, MikrotikAPI.Models.ScriptCreateModel>()
+            CreateMap<Models.Mikrotik.ScriptCreateModel, MikrotikAPI.Models.ScriptCreateModel>()
                 .ForMember(dest => dest.Policy,
                     opt => opt.MapFrom(src => string.Join(',', src.Policies)));
 
@@ -132,7 +142,7 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => src.Policy.Split(',', StringSplitOptions.None).ToList()))
                 .ForMember(dest => dest.Enabled,
                     opt => opt.MapFrom(src => !src.Disabled));
-            CreateMap<SchedulerCreateModel, MikrotikAPI.Models.SchedulerCreateModel>()
+            CreateMap<Models.Mikrotik.SchedulerCreateModel, MikrotikAPI.Models.SchedulerCreateModel>()
                 .ForMember(dest => dest.Policy,
                     opt => opt.MapFrom(src => string.Join(',', src.Policies)))
                 .ForMember(dest => dest.StartDate,
@@ -141,7 +151,7 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => TimeToString(src.StartTime)))
                 .ForMember(dest => dest.Interval,
                     opt => opt.MapFrom(src => TimeToString(src.Interval)));
-            CreateMap<SchedulerUpdateModel, MikrotikAPI.Models.SchedulerUpdateModel>()
+            CreateMap<Models.Mikrotik.SchedulerUpdateModel, MikrotikAPI.Models.SchedulerUpdateModel>()
                 .ForMember(dest => dest.Id,
                     opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
                 .ForMember(dest => dest.Policy,
@@ -193,6 +203,26 @@ namespace MTWireGuard.Application.Mapper
                     opt => opt.MapFrom(src => "N/A"))
                 .ForMember(dest => dest.ISP,
                     opt => opt.MapFrom(src => ParseISP(src)));
+
+            // Simple Queue
+            CreateMap<SimpleQueue, SimpleQueueViewModel>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
+                .ForMember(dest => dest.Enabled,
+                    opt => opt.MapFrom(src => !src.Disabled))
+                .ForMember(dest => dest.MaxLimitUpload,
+                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Upload))
+                .ForMember(dest => dest.MaxLimitDownload,
+                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Download))
+                .ForMember(dest => dest.UploadBytes,
+                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Upload))
+                .ForMember(dest => dest.DownloadBytes,
+                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Download));
+        }
+
+        private void Init()
+        {
+            _logger = Provider.GetService<ILogger>();
         }
 
         private static List<string> FormatTopics(string topics)
@@ -314,6 +344,19 @@ namespace MTWireGuard.Application.Mapper
                 "private range" => "Private Range",
                 _ => "N/A",
             };
+        }
+
+        private (ulong Upload, ulong Download) ParseBytesTouple(string input)
+        {
+            var parts = input.Split('/');
+            if (parts.Length != 2 || !ulong.TryParse(parts[0], out var upload) || !ulong.TryParse(parts[1], out var download))
+            {
+                var ex = new ArgumentException("Invalid format. Expected format: 'upload/download'", nameof(input));
+                _logger.Error(ex, "Invalid max-limit format {value}", input);
+                throw ex;
+            }
+
+            return (upload, download);
         }
     }
 }

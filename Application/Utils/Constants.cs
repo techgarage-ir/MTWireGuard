@@ -19,7 +19,7 @@ namespace MTWireGuard.Application.Utils
 
         public static string PeersTrafficUsageScript(string apiURL)
         {
-            return $"/tool fetch mode=http url=\"{apiURL}\" http-method=post check-certificate=no output=none http-data=([/interface/wireguard/peers/print show-ids proplist=rx,tx as-value]);";
+            return $"/tool fetch mode=http url=\"{apiURL}\" http-method=post check-certificate=no output=none http-data=([/queue/simple/print stats proplist=name,bytes as-value]);";
         }
 
         public static string UserExpirationScript(string userID)

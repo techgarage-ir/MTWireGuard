@@ -69,7 +69,7 @@ let renderTableCell = (function () {
         let used = convertByteSize(full['trafficUsed']);
         let total = full['traffic'] == 0 ? '&#8734;' : `${full['traffic']}GB`;
         let output = `${used} / ${total}`;
-        return '<span class="badge text-bg-success">' + output + '</span>';
+        return '<a href="javascript:;" class="btn btn-sm btn-dark text-light btn-icon item-reset me-1"><i class="bx bx-reset"></i></a>' + '<span class="badge text-bg-success">' + output + '</span>';
     }
 
     function renderExpire(data) {
@@ -202,7 +202,6 @@ $(function () {
                         render: function (data, type, full, meta) {
                             return (
                                 '<a href="javascript:;" class="btn text-primary btn-icon item-edit" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEditUser"><i class="bx bxs-edit"></i></a>' +
-                                '<a href="javascript:;" class="btn text-primary btn-icon item-reset"><i class="bx bx-reset"></i></a>' +
                                 '<a href="javascript:;" class="btn text-primary btn-icon item-qr" data-bs-toggle="modal" data-bs-target="#QRModal"><i class="bx bx-qr"></i></a>' +
                                 '<a href="javascript:;" class="btn text-primary btn-icon item-download"><i class="bx bxs-download"></i></a>' +
                                 '<div class="d-inline-block">' +

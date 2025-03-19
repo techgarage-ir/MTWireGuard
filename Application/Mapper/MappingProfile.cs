@@ -213,10 +213,6 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.MaxLimitUpload,
                     opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Upload))
                 .ForMember(dest => dest.MaxLimitDownload,
-                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Download))
-                .ForMember(dest => dest.UploadBytes,
-                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Upload))
-                .ForMember(dest => dest.DownloadBytes,
                     opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Download));
         }
 

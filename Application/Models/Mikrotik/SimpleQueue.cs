@@ -3,8 +3,6 @@
     public class SimpleQueueViewModel
     {
         public int Id { get; set; }
-        public ulong UploadBytes { get; set; }
-        public ulong DownloadBytes { get; set; }
         public string Comment { get; set; }
         public bool Enabled { get; set; }
         public ulong MaxLimitUpload { get; set; }

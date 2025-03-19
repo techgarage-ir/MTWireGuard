@@ -81,13 +81,18 @@ let renderTableCell = (function () {
         return full.inheritIP ? `<span class="d-flex align-items-center" title="DHCP assigned IP"><i class='bx bx-hive me-1'></i> ${ip}</span>` : `<span class="d-flex align-items-center">${ip}</span>`;
     }
 
+    function renderBandwidth(data) {
+        return `<span class="badge text-bg-info text-uppercase">${data}</span>`;
+    }
+
     return {
         renderTitle,
         renderName,
         renderSwitch,
         renderTraffic,
         renderExpire,
-        renderIPAddress
+        renderIPAddress,
+        renderBandwidth
     }
 })();
 
@@ -121,6 +126,7 @@ $(function () {
                     { data: 'ipAddress' },
                     { data: 'traffic' },
                     { data: 'expire' },
+                    { data: 'bandwidth' },
                     { data: '' }
                 ],
                 columnDefs: [
@@ -177,6 +183,13 @@ $(function () {
                         targets: 6,
                         render: function (data, type, full, meta) {
                             return renderTableCell.renderExpire(data);
+                        }
+                    },
+                    {
+                        // Bandwidth
+                        targets: 7,
+                        render: function (data, type, full, meta) {
+                            return renderTableCell.renderBandwidth(data);
                         }
                     },
                     {
@@ -555,6 +568,7 @@ $(function () {
             dnsAddress: data.get('DNSAddress'),
             expire: data.get('Expire'),
             traffic: data.get('Traffic') || 0,
+            bandwidth: `${data.get('BandwidthUpload') || 0}${data.get('BandwidthUploadUnit')}/${data.get('BandwidthDownload') || 0}${data.get('BandwidthDownloadUnit')}`,
             enabled: form.find('button.btn-toggle').attr('aria-pressed') == 'true'
         }).then(data => {
             const toastMSG = new toastMessage("Create User", data.body, data.title, data.background);
@@ -591,6 +605,7 @@ $(function () {
             dnsAddress: data.get('DNSAddress') || null,
             expire: data.get('Expire') || null,
             traffic: data.get('Traffic') || null,
+            bandwidth: `${data.get('BandwidthUpload')}${data.get('BandwidthUploadUnit')}/${data.get('BandwidthDownload')}${data.get('BandwidthDownloadUnit')}`,
             enabled: form.find('button.btn-toggle').attr('aria-pressed') == 'true'
         }).then(data => {
             const toastMSG = new toastMessage("Update User", data.body, data.title, data.background);

@@ -230,6 +230,10 @@ $(function () {
                     },
                     buttons: [
                         {
+                            text: `<i class="bx bx-timer me-1"></i> <span class="d-none d-lg-inline-block" id="refreshTime">Refresh: N/A</span>`,
+                            className: 'btn-info rounded-2 me-3'
+                        },
+                        {
                             extend: 'collection',
                             className: 'btn-primary dropdown-toggle me-2',
                             text: '<i class="bx bx-show me-1"></i>Export',
@@ -509,6 +513,14 @@ $(function () {
                             dt_basic.ajax.reload();
                         });
                     });
+                    api.config.refreshTime.get()
+                        .then(function (response) {
+                            document.getElementById('refreshTime').innerText = `Refresh: ${response.time}`;
+                        })
+                        .catch(function (error) {
+                            console.error(error);
+                            document.getElementById('refreshTime').innerText = "N/A";
+                        });
                 }
             });
         }

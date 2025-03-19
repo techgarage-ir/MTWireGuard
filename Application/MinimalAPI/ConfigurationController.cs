@@ -7,6 +7,7 @@ using MTWireGuard.Application.Models.Mikrotik;
 using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
 using MTWireGuard.Application.Repositories;
+using Serilog;
 
 namespace MTWireGuard.Application.MinimalAPI
 {
@@ -101,6 +102,22 @@ namespace MTWireGuard.Application.MinimalAPI
             var update = await API.SetDNS(model);
             var message = mapper.Map<ToastMessage>(update);
             return TypedResults.Ok(message);
+        }
+
+        public static async Task<Ok<object>> TrafficRefresh(
+            [FromServices] IMikrotikRepository API,
+            [FromServices] ILogger logger)
+        {
+            var scheduler = await API.GetSchedulerByName("TrafficUsage");
+            if (scheduler == null)
+            {
+                logger.Fatal("Can't find traffic update scheduler");
+                return TypedResults.Ok((object)string.Empty);
+            }
+            return TypedResults.Ok(new JsonResult(new
+            {
+                Time = scheduler.NextRun.ToString("HH:mm:ss")
+            }).Value);
         }
     }
 }

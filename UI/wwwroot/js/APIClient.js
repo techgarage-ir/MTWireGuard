@@ -163,6 +163,9 @@ class APIClient {
         },
         information: {
             get: () => this.makeRequest(this.endpoints.config.Information)
+        },
+        refreshTime: {
+            get: () => this.makeRequest(this.endpoints.config.RefreshTime)
         }
     }
 
@@ -210,7 +213,8 @@ class APIClient {
                 Identity: `${config}/identity`,
                 Information: `${config}/information`,
                 Logs: `${config}/logs`,
-                Resources: `${config}/resources`
+                Resources: `${config}/resources`,
+                RefreshTime: `${config}/refreshTime`
             }
         };
     })();

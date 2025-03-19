@@ -33,6 +33,7 @@ namespace MTWireGuard.Application.Repositories
         Task<string> RunScript(string name);
         Task<List<SchedulerViewModel>> GetSchedulers();
         Task<SchedulerViewModel> GetScheduler(int id);
+        Task<SchedulerViewModel> GetSchedulerByName(string name);
         Task<CreationResult> CreateScheduler(Models.Mikrotik.SchedulerCreateModel scheduler);
         Task<CreationResult> UpdateScheduler(Models.Mikrotik.SchedulerUpdateModel scheduler);
         Task<CreationResult> CreateServer(ServerCreateModel server);

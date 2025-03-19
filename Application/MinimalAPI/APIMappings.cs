@@ -106,6 +106,8 @@ namespace MTWireGuard.Application.MinimalAPI
                 .RequireAuthorization();
             group.MapGet(Endpoints.Information, ConfigurationController.Information)
                 .RequireAuthorization();
+            group.MapGet(Endpoints.TrafficRefresh, ConfigurationController.TrafficRefresh)
+                .RequireAuthorization();
             return group;
         }
 
@@ -224,6 +226,7 @@ namespace MTWireGuard.Application.MinimalAPI
         public const string Logs = "/Logs";
         public const string Resources = "/Resources";
         public const string Information = "/Information";
+        public const string TrafficRefresh = "/RefreshTime";
         //  Retrival
         public const string Usage = "/Usage";
         public const string IPLookup = "/IPLookup";

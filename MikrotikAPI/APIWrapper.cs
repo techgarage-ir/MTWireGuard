@@ -368,6 +368,11 @@ namespace MikrotikAPI
             return await DeleteItem(Endpoints.Queue, id);
         }
 
+        public async Task<string> ResetSimpleQueue(string id)
+        {
+            return await SendPostRequestAsync($"{Endpoints.Queue}/reset-counters", $"{{\".id\":\"{id}\"}}");
+        }
+
         // Base Methods
         private async Task<CreationStatus> CreateItem<T>(string Endpoint, object ItemCreateModel)
         {

@@ -64,5 +64,6 @@ namespace MTWireGuard.Application.Repositories
         Task<CreationResult> CreateSimpleQueue(SimpleQueueCreateModel simpleQueue);
         Task<CreationResult> UpdateSimpleQueue(SimpleQueueUpdateModel simpleQueue);
         Task<CreationResult> DeleteSimpleQueue(int id);
+        Task<CreationResult> ResetSimpleQueue(string name);
     }
 }

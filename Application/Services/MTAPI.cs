@@ -979,6 +979,7 @@ namespace MTWireGuard.Application.Services
             try
             {
                 var traffics = dbContext.DataUsages.Where(t => t.UserID == id);
+
                 dbContext.DataUsages.RemoveRange(traffics);
 
                 var lastKnownTraffic = dbContext.LastKnownTraffic.FirstOrDefault(t => t.UserID == id);
@@ -996,6 +997,9 @@ namespace MTWireGuard.Application.Services
                 }
 
                 await dbContext.SaveChangesAsync();
+
+                await ResetSimpleQueue($"QueueUser{id}");
+
                 return new()
                 {
                     Code = "200",
@@ -1046,6 +1050,32 @@ namespace MTWireGuard.Application.Services
         {
             var delete = await wrapper.DeleteSimpleQueue(ConverterUtil.ParseEntityID(id));
             return Map<CreationResult>(delete);
+        }
+
+        public async Task<CreationResult> ResetSimpleQueue(string name)
+        {
+            var queue = await GetSimpleQueueByName(name);
+            if (queue != null)
+            {
+                var reset = await wrapper.ResetSimpleQueue(ConverterUtil.ParseEntityID(queue.Id));
+                return reset == "[]" ? new CreationResult()
+                {
+                    Code = "200",
+                    Title = "Simple queue reset",
+                    Description = "Simple Queue reset-counters successfully"
+                } : new CreationResult()
+                {
+                    Code = "400",
+                    Title = "Simple queue reset",
+                    Description = "Failed to reset simple queue counters"
+                };
+            }
+            return new CreationResult()
+            {
+                Code = "400",
+                Title = "Simple queue reset",
+                Description = "No simple queue found"
+            };
         }
 
         // General

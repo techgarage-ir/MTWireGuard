@@ -184,7 +184,7 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Id,
                     opt => opt.Ignore())
                 .ForMember(dest => dest.UserID,
-                    opt => opt.MapFrom(src => ConverterUtil.ParseEntityID(src.Id)))
+                    opt => opt.MapFrom(src => int.Parse(src.Id)))
                 .ForMember(dest => dest.CreationTime,
                     opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.RX,
@@ -211,13 +211,13 @@ namespace MTWireGuard.Application.Mapper
                 .ForMember(dest => dest.Enabled,
                     opt => opt.MapFrom(src => !src.Disabled))
                 .ForMember(dest => dest.MaxLimitUpload,
-                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Upload))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Upload))
                 .ForMember(dest => dest.MaxLimitDownload,
-                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Download))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Download))
                 .ForMember(dest => dest.UploadBytes,
-                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Upload))
+                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Upload))
                 .ForMember(dest => dest.DownloadBytes,
-                    opt => opt.MapFrom(src => ParseBytesTouple(src.MaxLimit).Download));
+                    opt => opt.MapFrom(src => ConverterUtil.ParseBytesTouple(src.MaxLimit).Download));
         }
 
         private void Init()
@@ -344,19 +344,6 @@ namespace MTWireGuard.Application.Mapper
                 "private range" => "Private Range",
                 _ => "N/A",
             };
-        }
-
-        private (ulong Upload, ulong Download) ParseBytesTouple(string input)
-        {
-            var parts = input.Split('/');
-            if (parts.Length != 2 || !ulong.TryParse(parts[0], out var upload) || !ulong.TryParse(parts[1], out var download))
-            {
-                var ex = new ArgumentException("Invalid format. Expected format: 'upload/download'", nameof(input));
-                _logger.Error(ex, "Invalid max-limit format {value}", input);
-                throw ex;
-            }
-
-            return (upload, download);
         }
     }
 }

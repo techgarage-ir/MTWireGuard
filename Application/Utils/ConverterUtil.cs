@@ -127,6 +127,17 @@
         {
             return Convert.ToUInt64(gigabyte * (1024L * 1024 * 1024));
         }
+
+        public static (ulong Upload, ulong Download) ParseBytesTouple(string input)
+        {
+            var parts = input.Split('/');
+            if (parts.Length != 2 || !ulong.TryParse(parts[0], out var upload) || !ulong.TryParse(parts[1], out var download))
+            {
+                throw new ArgumentException("Invalid format. Expected format: 'upload/download'", nameof(input));
+            }
+
+            return (upload, download);
+        }
         #endregion
     }
 }

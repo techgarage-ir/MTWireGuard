@@ -12,7 +12,7 @@ namespace MTWireGuard.Application.Utils
             string[] items = input.Split(".id=");
 
             List<string> objects = items
-                .Where(item => !string.IsNullOrEmpty(item))
+                .Where(item => !string.IsNullOrEmpty(item) && item.Contains("name=QueueUser"))
                 .Select(item => $"id={item}")
                 .ToList();
 
@@ -21,14 +21,22 @@ namespace MTWireGuard.Application.Utils
                 .Select(arr =>
                 {
                     var obj = new UsageObject();
-                    var id = arr.Find(x => x.Contains("id")).Split('=')[1];
-                    var rx = arr.Find(x => x.Contains("rx")).Split('=')[1] ?? "0";
-                    var tx = arr.Find(x => x.Contains("tx")).Split('=')[1] ?? "0";
-                    obj.Id = id;
-                    obj.RX = ulong.Parse(rx);
-                    obj.TX = ulong.Parse(tx);
+
+                    string idEntry = arr.Find(x => x.StartsWith("name="));
+                    string bytesEntry = arr.Find(x => x.StartsWith("bytes="));
+
+                    string id = idEntry.Split('=')[1];
+                    obj.Id = id["QueueUser".Length..];
+
+                    string bytes = bytesEntry?.Split('=')[1] ?? "0/0";
+                    (ulong Upload, ulong Download) = ConverterUtil.ParseBytesTouple(bytes);
+
+                    obj.RX = Download;
+                    obj.TX = Upload;
+
                     return obj;
-                }).ToList();
+                })
+                .ToList();
         }
 
         public static async void HandleUserTraffics(List<DataUsage> updates, DBContext dbContext, IMikrotikRepository API, ILogger logger)

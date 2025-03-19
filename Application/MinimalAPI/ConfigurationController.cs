@@ -1,19 +1,12 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MikrotikAPI.Models;
 using MTWireGuard.Application.Models.Mikrotik;
-using MTWireGuard.Application.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
 using MTWireGuard.Application.Models.Models.Responses;
 using MTWireGuard.Application.Models.Requests;
-using MTWireGuard.Application.Models;
-using MikrotikAPI.Models;
-using Newtonsoft.Json;
+using MTWireGuard.Application.Repositories;
 
 namespace MTWireGuard.Application.MinimalAPI
 {

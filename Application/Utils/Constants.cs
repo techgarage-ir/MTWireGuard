@@ -1,6 +1,5 @@
-﻿using MTWireGuard.Application.Models;
-using Newtonsoft.Json.Schema;
-using Newtonsoft.Json.Schema.Generation;
+﻿using Newtonsoft.Json.Schema;
+using System.Runtime.InteropServices;
 
 namespace MTWireGuard.Application.Utils
 {
@@ -46,6 +45,16 @@ namespace MTWireGuard.Application.Utils
                     throw new InvalidOperationException("IPApiSchema can only be set once.");
                 }
             }
+        }
+
+        public static string DataPath()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Path.Join("/home", "app") : Path.Join(AppDomain.CurrentDomain.BaseDirectory);
+        }
+
+        public static string DataPath(string filename)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Path.Join("/home", "app", filename) : Path.Join(AppDomain.CurrentDomain.BaseDirectory, filename);
         }
     }
 }

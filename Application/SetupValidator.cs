@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Repositories;
 using MTWireGuard.Application.Utils;
 using Newtonsoft.Json.Schema.Generation;
 using Serilog;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 
 namespace MTWireGuard.Application
 {
@@ -21,6 +20,11 @@ namespace MTWireGuard.Application
 
         public async Task<bool> Validate()
         {
+            if (!Directory.Exists(Constants.DataPath()))
+            {
+                Directory.CreateDirectory(Constants.DataPath());
+            }
+
             InitializeServices();
 
             Constants.IPApiSchema = new JSchemaGenerator().Generate(typeof(IPAPIResponse));
@@ -123,7 +127,9 @@ namespace MTWireGuard.Application
 
         private void InitializeServices()
         {
-            serviceProvider.GetService<DBContext>().Database.EnsureCreated();
+            var dbContext = serviceProvider.GetService<DBContext>();
+            dbContext.Database.Migrate();
+            dbContext.Database.EnsureCreated();
             api = serviceProvider.GetService<IMikrotikRepository>();
             logger = serviceProvider.GetService<ILogger>();
         }
@@ -141,7 +147,7 @@ namespace MTWireGuard.Application
                     Interval = new TimeSpan(0, 5, 0),
                     OnEvent = Constants.PeersTrafficUsageScript($"http://{ip}/api/usage"),
                     Policies = ["write", "read", "test", "ftp"],
-                    Comment = "update wireguard peers traffic usage"
+                    Comment = "Update wireguard peers traffic usage"
                 });
                 var result = create.Code;
                 logger.Information("Created TrafficUsage Scheduler", new

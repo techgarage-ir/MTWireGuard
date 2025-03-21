@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MTWireGuard.Application.Models;
 using MTWireGuard.Application.Models.Mikrotik;
+using MTWireGuard.Application.Utils;
 
 namespace MTWireGuard.Application
 {
@@ -15,7 +16,7 @@ namespace MTWireGuard.Application
 
         public DBContext()
         {
-            DbPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "MikrotikWireguard.db");
+            DbPath = Constants.DataPath("MTWireguard.db");
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
@@ -23,6 +24,7 @@ namespace MTWireGuard.Application
             options.UseSqlite($"Data Source={DbPath}", opt =>
             {
                 opt.MigrationsAssembly("MTWireGuard.Application");
+                opt.MigrationsHistoryTable("MigrationHistory");
             });
         }
     }

@@ -22,23 +22,13 @@ namespace MTWireGuard.Application.Utils
         }
 
         /// <summary>
-        /// Return full path of requested file in app's home directory
-        /// </summary>
-        /// <param name="filename">requested file name</param>
-        /// <returns></returns>
-        public static string GetHomePath(string filename)
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Path.Join("/home/app", filename) : Path.Join(AppDomain.CurrentDomain.BaseDirectory, filename);
-        }
-
-        /// <summary>
         /// Return full path of requested file in log files directory
         /// </summary>
         /// <param name="filename">requested file name</param>
         /// <returns></returns>
-        public static string GetLogPath(string filename) => Path.Join(AppDomain.CurrentDomain.BaseDirectory, "log", filename);
+        public static string GetLogPath(string filename) => Path.Join(Constants.DataPath(), "logs", filename);
 
-        public static string GetIDFile() => GetHomePath("identifier.id");
+        public static string GetIDFile() => Constants.DataPath("identifier.id");
         public static string GetIDContent()
         {
             var idFile = GetIDFile();

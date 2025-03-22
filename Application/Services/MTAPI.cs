@@ -173,12 +173,13 @@ namespace MTWireGuard.Application.Services
                 if (existing != null) // user exists in system
                 {
                     userId = existing.Id;
-                    var updateModel = new UserUpdateModel()
+                    var update = await UpdateUser(new UserUpdateModel()
                     {
                         Id = userId,
                         AllowedAddress = user.AllowedAddress,
                         AllowedIPs = user.AllowedIPs,
                         DNSAddress = user.DNSAddress,
+                        Expire = DateTime.Parse(user.Expire),
                         Interface = user.Interface,
                         IPAddress = user.IPAddress,
                         Name = user.Name,
@@ -186,9 +187,7 @@ namespace MTWireGuard.Application.Services
                         PublicKey = user.PublicKey,
                         Traffic = user.Traffic,
                         Bandwidth = user.Bandwidth.Replace("B", string.Empty).Replace(" ", string.Empty),
-                    };
-                    if (!user.Expire.Equals("unlimited", StringComparison.CurrentCultureIgnoreCase)) updateModel.Expire = DateTime.Parse(user.Expire);
-                    var update = await UpdateUser(updateModel);
+                    });
                     built = update.Code == "200";
                     if (built) updated++;
                     else
@@ -199,11 +198,12 @@ namespace MTWireGuard.Application.Services
                 }
                 else
                 {
-                    var addModel = new UserCreateModel()
+                    var add = await CreateUser(new UserCreateModel()
                     {
                         AllowedAddress = user.AllowedAddress,
                         AllowedIPs = user.AllowedIPs,
                         DNSAddress = user.DNSAddress,
+                        Expire = DateTime.Parse(user.Expire),
                         Interface = user.Interface,
                         IPAddress = user.IPAddress,
                         Name = user.Name,
@@ -211,9 +211,7 @@ namespace MTWireGuard.Application.Services
                         PublicKey = user.PublicKey,
                         Traffic = user.Traffic,
                         Disabled = !user.Enabled
-                    };
-                    if (!user.Expire.Equals("unlimited", StringComparison.CurrentCultureIgnoreCase)) addModel.Expire = DateTime.Parse(user.Expire);
-                    var add = await CreateUser(addModel);
+                    });
                     built = add.Code == "200";
                     if (built) inserted++;
                     else

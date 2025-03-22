@@ -15,21 +15,6 @@
       "applicationUrl": "https://192.168.0.5:7220;http://192.168.0.5:5220",
       "nativeDebugging": true
     },
-    "Demo": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "MT_IP": "192.168.0.6",
-        "MT_USER": "admin",
-        "MT_PASS": "admin",
-        "MT_PUBLIC_IP": "192.168.0.6"
-      },
-      "hotReloadEnabled": true,
-      "dotnetRunMessages": true,
-      "applicationUrl": "https://192.168.0.5:7220;http://192.168.0.5:5220",
-      "nativeDebugging": true
-    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,

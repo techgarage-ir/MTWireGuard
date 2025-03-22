@@ -114,7 +114,7 @@ namespace MTWireGuard.Application.Mapper
         {
             try
             {
-                if (source == null)
+                if (source == null || string.IsNullOrWhiteSpace(source.IPPool))
                 {
                     return 0;
                 }

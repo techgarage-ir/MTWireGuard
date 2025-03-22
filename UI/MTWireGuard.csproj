@@ -35,4 +35,10 @@
     <ProjectReference Include="..\Application\MTWireGuard.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Pages\Components\Modals\ImportModal.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
 </Project>
